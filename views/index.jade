@@ -19,19 +19,42 @@ block content
 
 block script
   script
+    window.sweetnes = window.sweetnes || {}
+
+    sweetnes.Game = function(name) {
+      this.name = name;
+      this.rom = name; // lowercase, replace space with underscore, append .rom
+      this.trailer = name; // lowercase, replace space with underscore, append .mov
+    }
+
+    sweetnes.Games = new Ring();
+
+    ["Mega Man", "Tetris", "Super Mario Bros. 3", "Contra"].forEach(function(name) {
+      sweetnes.Games.push(new sweetnes.Game(name));
+    });
+
+    sweetnes.updateGameName = function() {
+      var plate = document.getElementById("name");
+      plate.innerHTML = sweetnes.Games.get().name;
+    }
+
+    sweetnes.updateGameName();
+
     // Can just do this onLoad
-    var arrows = document.getElementsByClassName("arrow")
+    var arrows = document.getElementsByClassName("arrow");
 
     // Could make these bindings implicit by setting some data attribute
     // on actual elements instead. Totally better.
     k("left", function() {
       var arrow = arrows[0];
 
-
       arrow.setAttribute("class", "arrow");
       setTimeout(function() {
         arrow.setAttribute("class", "arrow shift left");
       }, 1);
+
+      sweetnes.Games.prev();
+      sweetnes.updateGameName();
     });
 
     k("right", function() {
@@ -43,4 +66,7 @@ block script
       setTimeout(function() {
         arrow.setAttribute("class", "arrow shift right");
       }, 1);
+
+      sweetnes.Games.next();
+      sweetnes.updateGameName();
     });
