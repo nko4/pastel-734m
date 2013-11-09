@@ -1,4 +1,5 @@
 require('nko')('WP4Tfg3Wdz0fNnzA')
+fs = require 'fs'
 
 express = require 'express'
 app = express()
@@ -34,6 +35,11 @@ app.configure 'development', ->
 games = {}
 waiting = {}
 conns = {}
+words = ['yay']
+
+fs.readFile '/usr/share/dict/words', (err, data) ->
+  return console.log(err) if err
+  words = data.toString().split("\n")
 
 # Routes
 # ------
@@ -52,7 +58,7 @@ app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
       room = games[game]
       delete games[game]
     else
-      room = games[game] = Math.floor(Math.random() * 10000)
+      room = games[game] = words[Math.floor(Math.random() * words.length)]
     res.redirect "/play/#{game}/#{room}"
 
 app.get '/pair/:room/:id', (req, res) ->
@@ -87,6 +93,6 @@ http.createServer(app).listen app.get('port'), (err) ->
 
   # if run as root, downgrade to the owner of this file
   if process.getuid() == 0
-    require('fs').stat __filename, (err, stats) ->
+    fs.stat __filename, (err, stats) ->
       return console.error(err) if err
       process.setuid stats.uid
