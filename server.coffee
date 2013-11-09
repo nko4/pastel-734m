@@ -34,6 +34,9 @@ app.configure 'development', ->
 app.get '/', (req, res) ->
   res.render 'index'
 
+app.get '/play-test', (req, res) ->
+  res.render 'play_test'
+
 # View Helpers
 # ------------
 app.locals._ = require 'underscore'
