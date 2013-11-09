@@ -70,11 +70,11 @@ app.get '/pair/:room/:id', (req, res) ->
     partner = waiting[room]
 
     res.json id: partner.id, master: false
-    partner.res.json(id: id, master: true)
+    partner.res.json id: id, master: true
 
     delete waiting[room]
   else
-    waiting[room] = { id: id, conn: res }
+    waiting[room] = { id: id, res: res }
 
 # View Helpers
 # ------------
