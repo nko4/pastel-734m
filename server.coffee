@@ -29,6 +29,10 @@ app.configure ->
 app.configure 'development', ->
   app.use express.errorHandler()
 
+# State
+# -----
+waiting = {}
+
 # Routes
 # ------
 app.get '/', (req, res) ->
@@ -36,6 +40,18 @@ app.get '/', (req, res) ->
 
 app.get '/play-test', (req, res) ->
   res.render 'play_test'
+
+app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
+  game = req.params[0]
+  if id = req.params[1]
+    res.render 'play', game: game, id: id
+  else
+    if waiting[game]
+      id = waiting[game]
+      delete waiting[game]
+    else
+      id = waiting[game] = Math.floor(Math.random() * 10000)
+    res.redirect "/play/#{game}/#{id}"
 
 # View Helpers
 # ------------
