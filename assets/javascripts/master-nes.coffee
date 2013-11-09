@@ -1,6 +1,6 @@
 #= require 'base-nes'
 
-class window.MasterNes extends window.BaseNes
+class S.MasterNes extends S.BaseNes
   constructor: (nes, socket) ->
     @socket = socket
     @nes = nes
@@ -341,4 +341,3 @@ class window.MasterNes extends window.BaseNes
         console.log "Rom changed."
         self.partner "Rom:Changed", self.selectedRom
         self.onRomLoaded self.selectedRom
-
