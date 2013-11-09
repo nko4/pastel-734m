@@ -313,7 +313,7 @@ function Packer(utf8){
   this.bufferBuilder = new BufferBuilder();
 }
 
-Packer.prototype.pack = function(value){
+Packer.prototype.pack = function(value, skipReturn){
   var type = typeof(value);
   if (type == 'string'){
     this.pack_string(value);
@@ -365,7 +365,10 @@ Packer.prototype.pack = function(value){
   } else {
     throw new Error('Type "' + type + '" not yet supported');
   }
-  return this.bufferBuilder.getBuffer();
+  if (!skipReturn)
+    return this.bufferBuilder.getBuffer();
+  else
+    this.bufferBuilder._flush();
 }
 
 
@@ -423,7 +426,7 @@ Packer.prototype.pack_array = function(ary){
     throw new Error('Invalid length');
   }
   for(var i = 0; i < length ; i++){
-    this.pack(ary[i]);
+    this.pack(ary[i], true);
   }
 }
 
@@ -493,8 +496,8 @@ Packer.prototype.pack_object = function(obj){
   }
   for(var prop in obj){
     if (obj.hasOwnProperty(prop)){
-      this.pack(prop);
-      this.pack(obj[prop]);
+      this.pack(prop, true);
+      this.pack(obj[prop], true);
     }
   }
 }

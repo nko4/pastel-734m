@@ -199,6 +199,7 @@ class S.MasterNes extends S.BaseNes
     self = this
     self.ppuEndFrame.call self.nes.ppu
     if self.syncFrame
+      #console.log self.instruction_id #, self.frame_instructions
       self.partner "PPU:Frame",
         instruction: self.instruction_id
         frame_instructions: self.frame_instructions

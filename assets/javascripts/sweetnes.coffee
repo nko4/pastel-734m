@@ -6,7 +6,6 @@ class S.Socket
   constructor: (conn) ->
     @conn = conn
     @callbacks = {}
-    console.log 'new socket', conn
     @conn.on 'data', (data) =>
       @callbacks[data.key](data.data)
 
