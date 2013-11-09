@@ -19,7 +19,8 @@
     "nib": "*",
     "nko": "*",
     "stylus": "*",
-    "underscore": "*"
+    "underscore": "*",
+    "peer": "~0.2.1"
   },
   "devDependencies": {
     "nodemon": "*"
