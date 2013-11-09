@@ -16,9 +16,6 @@ block script
       if (master) {
         console.log("Starting master", socket)
         S.nes = new S.MasterNes(nes, socket)
-        setTimeout(function() {
-          $('.nes-roms select').val('/roms/Contra.nes').change()
-        }, 1000);
       } else {
         console.log("Starting slave", socket)
         S.nes = new S.SlaveNes(nes, socket)

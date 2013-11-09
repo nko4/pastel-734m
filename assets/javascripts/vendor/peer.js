@@ -811,7 +811,7 @@ Reliable.prototype._intervalSend = function(msg) {
 Reliable.prototype._processAcks = function() {
   for (var id in this._outgoing) {
     if (this._outgoing.hasOwnProperty(id)) {
-      this._sendWindowedChunks(id);
+      this._sendWindowedChunks(Number(id));
     }
   }
 };
