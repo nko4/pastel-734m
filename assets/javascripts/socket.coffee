@@ -12,5 +12,5 @@ class window.Socket
     @callbacks[key] = callback
 
   send: (data) ->
-    emit('message', data)
+    @emit('message', data)
 

@@ -2,7 +2,7 @@
 
 class window.SlaveNes extends window.BaseNes
   constructor: (nes, socket) ->
-    console.log("Starting master.")
+    console.log("Starting slave")
     @nes = nes
     @socket = socket
     @current_instruction = 0
@@ -196,7 +196,7 @@ class window.SlaveNes extends window.BaseNes
           j = 0
 
           while j < args[0]
-            @endScanline.apply self
+            @endScanline.apply @
             j++
         when @INSTRUCTIONS.loadVromBank
           @loadVromBank.apply @, args
