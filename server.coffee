@@ -18,6 +18,7 @@ app.configure ->
     helperContext: app.locals
     minifyBuilds: no  # minification freaks out angular
     src: __dirname + '/assets'
+    buildDir: __dirname + '/built-assets'
   app.locals.js.root = 'javascripts'
   app.locals.css.root = 'stylesheets'
 
