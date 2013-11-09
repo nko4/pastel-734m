@@ -17,6 +17,7 @@ app.configure ->
   app.use require('connect-assets')
     helperContext: app.locals
     minifyBuilds: no  # minification freaks out angular
+    src: __dirname + '/assets'
   app.locals.js.root = 'javascripts'
   app.locals.css.root = 'stylesheets'
 
