@@ -4,6 +4,8 @@ fs = require 'fs'
 express = require 'express'
 app = express()
 
+process.chdir __dirname
+
 app.configure ->
   app.set 'port', if process.env.NODE_ENV is 'production' then 80 else 8000
 
@@ -17,8 +19,6 @@ app.configure ->
   app.use require('connect-assets')
     helperContext: app.locals
     minifyBuilds: no  # minification freaks out angular
-    src: __dirname + '/assets'
-    buildDir: __dirname + '/built-assets'
   app.locals.js.root = 'javascripts'
   app.locals.css.root = 'stylesheets'
 
