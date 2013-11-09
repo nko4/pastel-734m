@@ -11,7 +11,7 @@ class S.SlaveNes extends S.BaseNes
       @socket.send JSON.stringify(ok: 1)
 
     @socket.on "Rom:Changed", (rom_location) =>
-      console.log "Rom changed to " + rom_location
+      console.log "Got rom changed."
       @selectedRom = rom_location
       @nes.ppu.reset()
       @loadRom rom_location
