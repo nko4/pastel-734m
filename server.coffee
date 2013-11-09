@@ -31,7 +31,9 @@ app.configure 'development', ->
 
 # State
 # -----
+games = {}
 waiting = {}
+conns = {}
 
 # Routes
 # ------
@@ -43,15 +45,32 @@ app.get '/play-test', (req, res) ->
 
 app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
   game = req.params[0]
-  if id = req.params[1]
-    res.render 'play', game: game, id: id
+  if room = req.params[1]
+    res.render 'play', game: game, room: room
   else
-    if waiting[game]
-      id = waiting[game]
-      delete waiting[game]
+    if games[game]
+      room = games[game]
+      delete games[game]
     else
-      id = waiting[game] = Math.floor(Math.random() * 10000)
-    res.redirect "/play/#{game}/#{id}"
+      room = games[game] = Math.floor(Math.random() * 10000)
+    res.redirect "/play/#{game}/#{room}"
+
+app.get '/pair/:room/:id', (req, res) ->
+  id = req.param('id')
+  room = req.param('room')
+
+  if waiting[room]
+    partnerId = waiting[room]
+
+    res.json(id: partnerId)
+
+    partnerConn = conns[partnerId]
+    partnerConn.json(id: id)
+
+    conns[partnerId] = null
+  else
+    waiting[room] = id
+    conns[id] = res
 
 # View Helpers
 # ------------

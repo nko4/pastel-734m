@@ -2,27 +2,22 @@
 #= require vendor/dynamicaudio.min
 #= require vendor/peer
 
-peer1 = new Peer { key:'lwjd5qra8257b9' }
-peer2 = new Peer { key:'lwjd5qra8257b9' }
+window.pair = (room) ->
+  peer = new Peer { key:'lwjd5qra8257b9' }
 
-peer1.on 'open', (id) ->
-  console.log 'Peer 1 ' + id
+  peer.on 'open', (id) ->
+    console.log 'Peer ID: ' + id
+    $.getJSON "/pair/#{room}/#{id}", (data) ->
+      console.log("Got: " + data)
+      console.log("Partner data: " + data['id'])
+      window.conn = peer.connect data['id']
 
-peer2.on 'open', (id) ->
-  console.log 'Peer 2 ' + id
+  peer.on 'connection', (conn) ->
+    conn.on 'data', (data) ->
+      console.log(data)
+      console.log("Got data, boyee!")
 
-peer1.on 'connection', (conn) ->
-  conn.on 'data', (data) ->
-    console.log(data)
-  console.log 'Peer1 connect'
+  peer.on 'connection', (conn) ->
+    console.log 'Peer connect'
 
-# onn = peer1.connect peer2.id
-
-# conn.on 'open', ->
-#   conn.on 'data', (data) ->
-#     console.log 'Received', data
-
-#   conn.send 'Hello'
-
-window.peer1 = peer1
-window.peer2 = peer2
+  window.peer = peer
