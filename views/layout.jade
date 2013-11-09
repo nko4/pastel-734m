@@ -3,6 +3,10 @@ html
   head
     title SweetN.ES
     != css('application')
+    script(src="/scripts/build.js")
+    script
+      var k = require('k')(window);
+
   body
     block content
 

@@ -8,11 +8,39 @@ block content
 
   div#current
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-        viewBox="0 0 64 64")
+        viewBox="0 0 64 64", class="arrow")
       g
         path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
     span#name MEGA MAN
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-        viewBox="0 0 64 64")
+        viewBox="0 0 64 64", class="arrow")
       g
         path(fill="none",stroke-width="5",stroke="#fff",d="M15.407061999999996,9.792208C15.407061999999996,9.792208,48.592939,31.887987,48.592939,31.887987C48.592939,31.887987,15.407061999999996,54.025974,15.407061999999996,54.025974")
+
+block script
+  script
+    // Can just do this onLoad
+    var arrows = document.getElementsByClassName("arrow")
+
+    // Could make these bindings implicit by setting some data attribute
+    // on actual elements instead. Totally better.
+    k("left", function() {
+      var arrow = arrows[0];
+
+
+      arrow.setAttribute("class", "arrow");
+      setTimeout(function() {
+        arrow.setAttribute("class", "arrow shift left");
+      }, 1);
+    });
+
+    k("right", function() {
+      var arrow = arrows[1];
+
+      console.log("hmm");
+
+      arrow.setAttribute("class", "arrow");
+      setTimeout(function() {
+        arrow.setAttribute("class", "arrow shift right");
+      }, 1);
+    });
