@@ -29,6 +29,9 @@ app.configure ->
 app.configure 'development', ->
   app.use express.errorHandler()
 
+waiting = []
+conns = {}
+
 # Routes
 # ------
 app.get '/', (req, res) ->
@@ -36,6 +39,27 @@ app.get '/', (req, res) ->
 
 app.get '/play-test', (req, res) ->
   res.render 'play_test'
+
+app.get '/pair/:id', (req, res) ->
+  id = req.params.id
+
+  if waiting.length > 0
+    partnerId = waiting.shift()
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.write(JSON.stringify({ id: partnerId }))
+    res.end()
+
+    partnerConn = conns[partnerId]
+    partnerConn.writeHead(200, { ' Content-Type': 'application/json' })
+    partnerConn.write(JSON.stringify({ id: id }))
+    partnerConn.end()
+
+    conns[partnerId] = null
+  else
+    waiting.push(id)
+    conns[id] = res
+
 
 # View Helpers
 # ------------
