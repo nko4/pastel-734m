@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "nodemon"
+    "test": "nodemon -e '.js|.coffee' -x 'node'"
   },
   "repository": {
     "type": "git",
