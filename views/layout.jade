@@ -3,6 +3,12 @@ html
   head
     title SweetN.ES
     != css('application')
+    script(src="/scripts/build.js")
+    script(src="//use.typekit.net/jyo4lba.js")
+    script
+      try{Typekit.load();}catch(e){}
+      var k = require('k')(window);
+
   body
     block content
 
