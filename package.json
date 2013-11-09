@@ -13,10 +13,12 @@
   },
   "dependencies": {
     "coffee-script": "*",
+    "connect-assets": "*",
     "express": "*",
     "jade": "*",
     "nko": "*",
-    "stylus": "*"
+    "stylus": "*",
+    "underscore": "*"
   },
   "devDependencies": {
     "nodemon": "*"
