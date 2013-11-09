@@ -1,5 +1,8 @@
 require('nko')('WP4Tfg3Wdz0fNnzA')
 fs = require 'fs'
+PeerServer = require('peer').PeerServer
+
+peerServer = new PeerServer({ port: 8001 })
 
 express = require 'express'
 app = express()

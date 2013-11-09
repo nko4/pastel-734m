@@ -6,7 +6,8 @@
 #= require socket
 
 window.pair = (room) ->
-  peer = new Peer { key:'lwjd5qra8257b9' }
+  id = Math.ceil(Math.random() * 1000000).toString()
+  peer = new Peer(id, { host: location.hostname, port: 8001})
 
   peer.on 'open', (id) ->
     console.log 'Peer ID: ' + id
