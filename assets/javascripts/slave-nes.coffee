@@ -13,7 +13,7 @@ class window.SlaveNes extends window.BaseNes
 
     console.log "listening to Rom:Changed message"
     @socket.on "Rom:Changed", (rom_location) =>
-      console.log "Got rom changed."
+      console.log "Rom changed to " + rom_location
       @selectedRom = rom_location
       @nes.ppu.reset()
       @loadRom rom_location
