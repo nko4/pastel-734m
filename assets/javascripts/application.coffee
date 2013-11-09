@@ -3,6 +3,7 @@
 #= require vendor/peer
 #= require master-nes
 #= require slave-nes
+#= require socket
 
 window.pair = (room) ->
   peer = new Peer { key:'lwjd5qra8257b9' }
@@ -13,6 +14,7 @@ window.pair = (room) ->
       console.log("Got: " + data)
       console.log("Partner data: " + data['id'])
       window.conn = peer.connect data['id']
+      window.master = data['master']
 
   peer.on 'connection', (conn) ->
     conn.on 'data', (data) ->
@@ -23,3 +25,4 @@ window.pair = (room) ->
     console.log 'Peer connect'
 
   window.peer = peer
+

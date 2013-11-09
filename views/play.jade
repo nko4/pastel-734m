@@ -2,7 +2,33 @@ extends layout
 
 block content
   h1 room: #{room}
+  #emulator
 
 block script
   script
     pair(#{room})
+
+    var nes;
+    window.startNes = function() {
+        return new JSNES({
+            'swfPath': '/audio/',
+            'ui': $('#emulator').JSNESUI({
+               "Working": [
+                    ['Contra', '/roms/Contra.nes'],
+               ],
+            })
+        });
+    }
+
+    window.peer.on('connection', function(conn) {
+      var nes = startNes()
+      if(window.master) {
+      console.log("Starting master")
+        new MasterNes(nes, new Socket(conn))
+      }
+      else {
+        new SlaveNes(nes, new Socket(conn))
+      }
+    })
+
+

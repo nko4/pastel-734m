@@ -1,7 +1,7 @@
 #= require 'base-nes'
 
 class window.MasterNes extends window.BaseNes
-  initialize: (nes, socket) ->
+  constructor: (nes, socket) ->
     @socket = socket
     @nes = nes
     @instruction_id = 0
@@ -29,7 +29,6 @@ class window.MasterNes extends window.BaseNes
       if @selectedRom
         @nes.stop()
         @partner "Rom:Changed", @selectedRom
-      else
 
     @socket.on "state:partner_ready", =>
       console.log "Player is ready"

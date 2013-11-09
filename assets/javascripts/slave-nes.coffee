@@ -1,7 +1,8 @@
 #= require 'base-nes'
 
-class window.Slave extends window.BaseNes
-  initialize: (nes, socket) ->
+class window.SlaveNes extends window.BaseNes
+  constructor: (nes, socket) ->
+    console.log("Starting master.")
     @nes = nes
     @socket = socket
     @current_instruction = 0

@@ -23,10 +23,7 @@ class window.BaseNes
 
   compressor: window.LZMA
   partner: (command, data) ->
-    self = this
-    self.socket.emit "proxy",
-      command: command
-      data: data
+    @socket.emit command, data
 
 
   loadRom: (url, callback) ->

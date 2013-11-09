@@ -62,12 +62,12 @@ app.get '/pair/:room/:id', (req, res) ->
   if waiting[room]
     partnerId = waiting[room]
 
-    res.json(id: partnerId)
+    res.json(id: partnerId, master: false)
 
     partnerConn = conns[partnerId]
-    partnerConn.json(id: id)
+    partnerConn.json(id: id, master: true)
 
-    conns[partnerId] = null
+    delete conns[partnerId]
   else
     waiting[room] = id
     conns[id] = res
