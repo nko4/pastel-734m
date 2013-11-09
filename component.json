@@ -1,0 +1,7 @@
+{
+  "name": "sweetnes",
+  "dependencies": {
+    "component/event": "0.1.1",
+    "component/mousetrap": "0.0.1"
+  }
+}

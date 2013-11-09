@@ -6,8 +6,9 @@ html
     script(src="/scripts/build.js")
     script(src="//use.typekit.net/jyo4lba.js")
     script
-      try{Typekit.load();}catch(e){}
-      var k = require('k')(window);
+      try{Typekit.load();}catch(e){};
+      window.mousetrap = require('mousetrap');
+      window.event = require('event');
 
   body
     block content
