@@ -1,6 +1,9 @@
+#= require 'sweetnes'
 #= require 'lzma'
+#= require vendor/jsnes.min
+#= require vendor/dynamicaudio.min
 
-class window.BaseNes
+class S.BaseNes
   INSTRUCTIONS:
     sramDMA: 0
     scrollWrite: 1
@@ -21,7 +24,7 @@ class window.BaseNes
     vramWrite: 16
     readStatusRegister: 17
 
-  compressor: window.LZMA
+  compressor: LZMA
   partner: (command, data) ->
     @socket.emit command, data
 

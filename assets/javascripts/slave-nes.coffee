@@ -1,8 +1,7 @@
 #= require 'base-nes'
 
-class window.SlaveNes extends window.BaseNes
+class S.SlaveNes extends S.BaseNes
   constructor: (nes, socket) ->
-    console.log("Starting slave")
     @nes = nes
     @socket = socket
     @current_instruction = 0
@@ -11,7 +10,6 @@ class window.SlaveNes extends window.BaseNes
     @socket.on "connection", (evt) =>
       @socket.send JSON.stringify(ok: 1)
 
-    console.log "listening to Rom:Changed message"
     @socket.on "Rom:Changed", (rom_location) =>
       console.log "Rom changed to " + rom_location
       @selectedRom = rom_location
