@@ -14,11 +14,10 @@ window.pair = (room) ->
     $.getJSON "/pair/#{room}/#{id}", (data) ->
       console.log("Got: " + data)
       console.log("Partner data: " + data['id'])
-      window.conn = peer.connect data['id'], reliable: true
+      window.conn = peer.connect data['id'], reliable: true, serialization: 'json'
       window.master = data['master']
 
   peer.on 'connection', (conn) ->
     console.log 'Peer connect'
 
   window.peer = peer
-
