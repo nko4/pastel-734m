@@ -1,3 +1,4 @@
+(function() {
 var LZMA,
 	action_compress   = 1,
 	action_decompress = 2,
@@ -3824,3 +3825,4 @@ onmessage = function (e) {
 		LZMA.decompress(e.data.data, e.data.callback_num);
 	}
 }
+})();
