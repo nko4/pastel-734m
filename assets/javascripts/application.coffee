@@ -1,6 +1,8 @@
 #= require vendor/jsnes.min
 #= require vendor/dynamicaudio.min
 #= require vendor/peer
+#= require master-nes
+#= require slave-nes
 
 window.pair = (room) ->
   peer = new Peer { key:'lwjd5qra8257b9' }
