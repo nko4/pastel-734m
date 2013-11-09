@@ -39,7 +39,6 @@ app.configure 'development', ->
 # -----
 games = {}
 waiting = {}
-conns = {}
 words = ['yay']
 
 fs.readFile '/usr/share/dict/words', (err, data) ->
@@ -68,17 +67,14 @@ app.get '/pair/:room/:id', (req, res) ->
   room = req.param('room')
 
   if waiting[room]
-    partnerId = waiting[room]
+    partner = waiting[room]
 
-    res.json(id: partnerId, master: false)
+    res.json id: partner.id, master: false
+    partner.res.json(id: id, master: true)
 
-    partnerConn = conns[partnerId]
-    partnerConn.json(id: id, master: true)
-
-    delete conns[partnerId]
+    delete waiting[room]
   else
-    waiting[room] = id
-    conns[id] = res
+    waiting[room] = { id: id, conn: res }
 
 # View Helpers
 # ------------
