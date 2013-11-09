@@ -4,18 +4,22 @@
   "description": "pastel 734m",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "nodemon"
   },
   "repository": {
     "type": "git",
     "url": "git@github.com:nko4/pastel-734m.git"
   },
   "dependencies": {
+    "coffee-script": "*",
     "express": "*",
     "jade": "*",
     "nko": "*",
-    "stylus": "*",
-    "coffee-script": "~1.6.3"
+    "stylus": "*"
+  },
+  "devDependencies": {
+    "nodemon": "*"
   },
   "engines": {
     "node": "0.10.x"

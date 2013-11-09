@@ -1,18 +1,19 @@
 # https://github.com/nko4/website/blob/master/module/README.md#nodejs-knockout-deploy-check-ins
 require('nko')('WP4Tfg3Wdz0fNnzA')
 
+express = require 'express'
+app = express()
+
 isProduction = process.env.NODE_ENV == 'production'
 http = require('http')
 port = if isProduction then 80 else 8000
 
-server = http.createServer (req, res) ->
-  # http://blog.nodeknockout.com/post/35364532732/protip-add-the-vote-ko-badge-to-your-app
-  voteko = '<iframe src="http://nodeknockout.com/iframe/pastel-734m" frameborder=0 scrolling=no allowtransparency=true width=115 height=25></iframe>'
+app.set 'view engine', 'jade'
 
-  res.writeHead 200, 'Content-Type': 'text/html'
-  res.end '<html><body>' + voteko + '</body></html>\n'
+app.get '/', (req, res) ->
+  res.render 'index'
 
-server.listen port, (err) ->
+app.listen port, (err) ->
   if err
     console.error(err)
     process.exit(-1)
