@@ -1,3 +1,4 @@
+# https://github.com/nko4/website/blob/master/module/README.md#nodejs-knockout-deploy-check-ins
 require('nko')('WP4Tfg3Wdz0fNnzA')
 
 isProduction = process.env.NODE_ENV == 'production'
