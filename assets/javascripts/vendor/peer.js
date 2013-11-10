@@ -808,7 +808,7 @@ Reliable.prototype._intervalSend = function(msg) {
   if (self._queue.length === 0) {
     clearTimeout(self._timeout);
     self._timeout = null;
-    self._processAcks();
+    //self._processAcks();
   }
 };
 
