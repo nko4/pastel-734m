@@ -35,7 +35,8 @@ S.IndexController = ($scope) ->
     setTimeout (-> $scope.$apply('direction=null')), 500
 
   $scope.play = ->
-    window.location = "/play/#{$scope.currentGame.urlSafeName()}"
+    $scope.currentGame.active = true
+    # window.location = "/play/#{$scope.currentGame.urlSafeName()}"
 
   mousetrap.bind "enter", -> $scope.$apply('play()')
   mousetrap.bind "left", -> $scope.$apply('left()')

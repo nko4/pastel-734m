@@ -2,18 +2,21 @@ extends layout
 
 block content
 
-  div.ng-cloak( ng-controller='S.IndexController' )
+  .ng-cloak( ng-controller='S.IndexController' ng-class='{ isPlaying: currentGame.active }')
+    .media
+      #trailers
+        video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='{ current: currentGame == game}')
 
-    #trailers
-      video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='currentGame == game && "current"' )
+      #emulator IM AN EMULATOR
 
-    a#play PLAY
+    .meta
+      a#play PLAY
 
-    #current
-      svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-           viewBox="0 0 64 64", ng-click='left()', class='arrow shift {{direction == "left" && "left"}}' )
-        g: path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
-      span#name( ng-click='right()' ) {{currentGame.name}}
-      svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-           viewBox="0 0 64 64", ng-click='right()', class='arrow shift {{direction == "right" && "right"}}' )
-        g: path(fill="none",stroke-width="5",stroke="#fff",d="M15.407061999999996,9.792208C15.407061999999996,9.792208,48.592939,31.887987,48.592939,31.887987C48.592939,31.887987,15.407061999999996,54.025974,15.407061999999996,54.025974")
+      #current
+        svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
+             viewBox="0 0 64 64", ng-click='left()', class='arrow shift {{direction == "left" && "left"}}' )
+          g: path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
+        span#name( ng-click='right()' ) {{currentGame.name}}
+        svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
+             viewBox="0 0 64 64", ng-click='right()', class='arrow shift {{direction == "right" && "right"}}' )
+          g: path(fill="none",stroke-width="5",stroke="#fff",d="M15.407061999999996,9.792208C15.407061999999996,9.792208,48.592939,31.887987,48.592939,31.887987C48.592939,31.887987,15.407061999999996,54.025974,15.407061999999996,54.025974")
