@@ -7,7 +7,7 @@ block content
       #trailers
         video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='{ current: currentGame == game}')
 
-      #emulator IM AN EMULATOR
+      canvas#emulator( width=256 height=240 )
 
     .meta
       a#play PLAY
