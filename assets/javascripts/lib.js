@@ -41,7 +41,18 @@ window.Ring = function() {
 };
 
 window.Speaker = function(stream) {
-  var context = new AudioContext();
+  var context;
+
+  if (typeof(AudioContext) != 'undefined') {
+    context = new AudioContext();
+  }
+  else if (typeof(webkitAudioContext) != 'undefined') {
+    context = new webkitAudioContext();
+  }
+  else {
+    console.log("Audio not supported");
+    return;
+  }
 
   // Gain filter controls volume
   var gain = context.createGain();
