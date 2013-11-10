@@ -16,7 +16,7 @@ class Game
   videoSrc: ->
     UA = navigator.userAgent
     isFirefox = UA.indexOf("Firefox") > -1
-    format = if window.isFirefox then ".ogg" else ".mp4"
+    format = if isFirefox then ".ogg" else ".mp4"
     "/videos/#{@urlSafeName()}#{format}"
 
 class JSNESUI
