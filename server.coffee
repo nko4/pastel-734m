@@ -56,23 +56,19 @@ app.get '/', (req, res) ->
 app.get '/test', (req, res) ->
   res.render 'test'
 
-app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
-  game = req.params[0]
-  if room = req.params[1]
-    res.render 'play', game: game, room: room
-  else
-    if games[game]
-      room = games[game]
-      delete games[game]
-    else
-      room = games[game] = words[Math.floor(Math.random() * words.length)]
-    res.redirect "/play/#{game}/#{room}"
+app.get '/word', (req, res) ->
+  word = words[Math.floor(Math.random() * words.length)].toLowerCase()
+  res.format
+    'text/html':        -> res.send word
+    'application/json': -> res.json word
 
 app.get '/pair/:room/:id', (req, res) ->
   id = req.param('id')
   room = req.param('room')
 
+  console.log "a new person for #{room}"
   if waiting[room]
+    console.log "found a partner in #{room}"
     partner = waiting[room]
 
     res.json id: partner.id, master: false
@@ -80,8 +76,11 @@ app.get '/pair/:room/:id', (req, res) ->
 
     delete waiting[room]
   else
+    console.log "waiting in #{room}"
     waiting[room] = { id: id, res: res }
-    res.on 'close', -> delete waiting[room]
+    res.on 'close', ->
+      delete waiting[room]
+      console.log "leaving #{room}"
 
 # View Helpers
 # ------------

@@ -19,7 +19,7 @@ class Game
   constructor: (@name) ->
     format = if S.browser is 'firefox' then ".ogg" else ".mp4"
 
-    @url = "/play/#{@urlSafeName()}-#{S.browser}"
+    @url = "#{@urlSafeName()}-#{S.browser}"
     @video = "/videos/#{@urlSafeName()}#{format}"
     @rom = "/roms/#{@urlSafeName()}.nes"
 
@@ -66,22 +66,7 @@ S.IndexController = ($scope) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    userAgentString = navigator.userAgent
-
-    if userAgentString.indexOf("Firefox")> 0
-      browser = "Firefox"
-    else if userAgentString.indexOf("Chrome/30") > 0
-      browser = "Chrome"
-    else if userAgentString.indexOf("Chrome/31") > 0
-      browser = "Chrome-Beta"
-    else
-      browser = "unknown"
-
-    userAgentRoom = "#{browser}-#{room}"
-
-    $scope.shareableUrl = "/pair/#{userAgentRoom}/#{id}"
-
-    $scope.pairRequest = $.getJSON "/pair/#{userAgentRoom}/#{id}", (data) ->
+    $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
       if data.master
         S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
         S.conn.on 'open', ->
@@ -152,7 +137,8 @@ S.IndexController = ($scope) ->
       swfPath: '/audio/'
       ui: JSNESUI
 
-    pair $scope.currentGame.urlSafeName(), (socket, master) ->
+    room = if $scope.privateRoom then 'foobar' else $scope.currentGame.url
+    pair room, (socket, master) ->
       if master
         m = new S.MasterNes(nes, socket)
         m.loadRom $scope.currentGame.rom, ->

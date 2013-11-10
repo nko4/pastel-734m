@@ -21,9 +21,9 @@ block content
 
     .meta
       a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
-      #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
+      #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR {{ privateRoom ? 'A FRIEND' : 'PLAYER' }}
 
-      #room
+      #room( ng-show="status == 'select'" )
         | with
         .option( ng-class='{ selected: !privateRoom }', ng-click='up()' ) anyone
         .option( ng-class='{ selected: privateRoom }', ng-click='down()' ) friend
