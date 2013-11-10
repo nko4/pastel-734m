@@ -12,7 +12,7 @@ class S.MasterNes extends S.BaseNes
     @debug = false
     @selectedRom = null
     @lastSendTime = null
-    @setupRomListener()
+    # @setupRomListener()
 
     @socket.on "PPU:Sync", =>
       @nes.stop()

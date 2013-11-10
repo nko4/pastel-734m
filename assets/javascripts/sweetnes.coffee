@@ -8,6 +8,7 @@ class Game
     @name = name
     @rom = name # lowercase, replace space with underscore, append .rom
     @url = @videoSrc()
+    @romUrl = "/roms/#{@urlSafeName()}.nes"
 
   urlSafeName: ->
     @name.replace(/\./g, '').replace(/\s/g, '_').toLowerCase()
@@ -44,12 +45,28 @@ class JSNESUI
 
   writeAudio: ->
 
+  enable: ->
+
   updateStatus: (message) ->
     console.log 'nes:', message
 
 S.IndexController = ($scope) ->
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = 1
+
+  pair = (room, cb) ->
+    id = Math.ceil(Math.random() * 1000000).toString()
+    peer = new Peer id, host: location.hostname, port: 8001
+
+    $.getJSON "/pair/#{room}/#{id}", (data) ->
+      if data.master
+        S.conn = peer.connect data.id, reliable: true, serialization: 'json'
+        S.conn.on 'open', ->
+          cb new Socket(S.conn), data.master if cb
+      else
+        peer.on 'connection', (conn) ->
+          S.conn = conn
+          cb new Socket(S.conn), data.master if cb
 
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
@@ -79,21 +96,25 @@ S.IndexController = ($scope) ->
     setTimeout (-> $scope.$apply('direction=null')), 500
 
   $scope.play = ->
-    $scope.currentGame.active = true
+    $scope.currentGame.waiting = true
+
     $scope.nes = nes = new JSNES
       swfPath: '/audio/'
       ui: JSNESUI
-    $.ajax
-      url: "/roms/#{$scope.currentGame.urlSafeName()}.nes"
-      xhr: ->
-        xhr = $.ajaxSettings.xhr()
-        if typeof xhr.overrideMimeType != 'undefined'
-          xhr.overrideMimeType('text/plain; charset=x-user-defined')
-        xhr
-      complete: (xhr, status) ->
-        data = xhr.responseText
-        nes.loadRom(data)
-        nes.start()
+
+    pair $scope.currentGame.urlSafeName(), (socket, master) ->
+      if master
+        m = new S.MasterNes(nes, socket)
+        m.loadRom $scope.currentGame.romUrl, ->
+          m.romInitialized()
+          m.selectedRom = $scope.currentGame.romUrl
+          m.partner "Rom:Changed", m.selectedRom
+          m.onRomLoaded m.selectedRom
+      else
+        new S.SlaveNes(nes, socket)
+
+      $scope.$apply 'currentGame.active = true'
+
     ###
     $http.get("/roms/#{$scope.currentGame.urlSafeName()}.nes", responseType: 'text/plain; charset=x-user-defined')
       .success (data) ->
