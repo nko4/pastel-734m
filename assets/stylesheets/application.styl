@@ -176,13 +176,21 @@ path
     border: 3px solid white
     border-radius: 1000px
     height: 74px
-    opacity: 0.2
+    opacity: 0
     width: 74px
     cursor: pointer
-    transition: opacity 0.1s, border-color 0.3s
+    margin-top: 300px
+    transition: opacity 1s, border-color 0.3s
 
     &.mute
       border-color: red
+
+    .waiting &#mic, .waiting &#speaker
+      opacity: 0.2
+
+    .playing &#mic, .playing &#speaker
+      transition: opacity 0.1s
+      opacity: 0.2
 
     &#mic
       float: left
