@@ -29,36 +29,12 @@ block content
         .option( ng-class='{ selected: privateRoom }', ng-click='down()' ) friend
 
       #instructions
-        p
-          |Press
-          span.key Z
-          |for
-          span.button A
-        p
-          |Press
-          span.key X
-          |for
-          span.button B
+        p Press <span class="key">Z</span> for <span class="button">A</span>
+        p Press <span class="key">X</span> for <span class="button">B</span>
 
-        p
-          |Press
-          span ENTER
-          |for
-          span.special start
-
-        p
-          |Press
-          span CTRL
-          |for
-          span.special select
-
-        p
-          |And
-          span ARROWS
-          |for
-          span.special +
-
-
+        p Press <span>ENTER</span> for <span class="special">start</span>
+        p Press <span>CTRL</span> for <span class="special">select</span>
+        p And <span>ARROWS</span> for <span class="special">+</span>
 
       #current
         svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
