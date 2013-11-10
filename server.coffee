@@ -56,20 +56,26 @@ app.get '/', (req, res) ->
 app.get '/test', (req, res) ->
   res.render 'test'
 
-app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
-  game = req.params[0]
-  if room = req.params[1]
-    res.render 'play', game: game, room: room
-  else
-    if games[game]
-      room = games[game]
-      delete games[game]
-    else
-      room = games[game] = words[Math.floor(Math.random() * words.length)]
-    res.redirect "/play/#{game}/#{room}"
+app.get /^\/angular/, (req, res) ->
+  res.render 'angular', layout: false
 
-app.get '/room', (req, res) ->
-  res.render 'room'
+app.get '/play/:game', (req, res) ->
+  game = req.param 'game'
+  console.log "looking for a game for #{game}"
+  if (room = games[game]) and waiting[room]
+    console.log "paired #{room} for #{game}"
+    delete games[game]
+  else
+    room = games[game] =
+      words[Math.floor(Math.random() * words.length)].toLowerCase()
+    console.log "creating #{room} for #{game}"
+
+  res.format
+    'application/json': -> res.json game: game, room: room
+    'text/html':        -> res.redirect "/play/#{game}/#{room}"
+
+app.get '/play/:game/:room', (req, res) ->
+  res.render 'index', game: req.param('game'), room: req.param('room')
 
 app.get '/pair/:room/:id', (req, res) ->
   id = req.param('id')
@@ -84,7 +90,10 @@ app.get '/pair/:room/:id', (req, res) ->
     delete waiting[room]
   else
     waiting[room] = { id: id, res: res }
-    res.on 'close', -> delete waiting[room]
+    console.log "one waiting in #{room}"
+    res.on 'close', ->
+      console.log "removing #{room}"
+      delete waiting[room]
 
 # View Helpers
 # ------------

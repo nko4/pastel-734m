@@ -4,7 +4,6 @@
 window.S = angular.module 'sweetnes', []
 
 userAgentString = navigator.userAgent
-
 S.browser =
   if userAgentString.indexOf("Firefox")> 0
     "firefox"
@@ -50,14 +49,14 @@ class JSNESUI
 
     @canvasContext.putImageData @canvasImageData, 0, 0
 
-  writeAudio: ->
-
-  enable: ->
+  writeAudio: -> # no-op
+  enable:     -> # no-op
+  updateStatus: (message) -> console.log 'nes:', message
 
   updateStatus: (message) ->
     # console.log 'nes:', message
 
-S.IndexController = ($scope) ->
+S.IndexController = ($scope, $http, $location, $browser) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = 0
@@ -66,15 +65,17 @@ S.IndexController = ($scope) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    $scope.pairRequest = $.getJSON "/pair/#{room}-#{S.browser}/#{id}", (data) ->
-      if data.master
-        S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
-        S.conn.on 'open', ->
-          cb new Socket(S.conn), data.master if cb
-      else
-        $scope.peer.on 'connection', (conn) ->
-          S.conn = conn
-          cb new Socket(S.conn), data.master if cb
+    $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
+      $scope.$apply ->
+        if data.master
+          S.conn = $scope.peer.connect data.id,
+            reliable: true, serialization: 'json'
+          S.conn.on 'open', ->
+            cb new Socket(S.conn), data.master if cb
+        else
+          $scope.peer.on 'connection', (conn) ->
+            S.conn = conn
+            cb new Socket(S.conn), data.master if cb
 
   roomName = () ->
     $scope.currentGame.urlSafeName()
@@ -96,10 +97,7 @@ S.IndexController = ($scope) ->
         mousetrap.bind 'left',  -> $scope.$apply 'left()'
         mousetrap.bind 'right', -> $scope.$apply 'right()'
       when 'waiting'
-        mousetrap.bind 'esc', ->
-          $scope.$apply 'status = "select"'
-          $scope.peer.destroy()
-          $scope.pairRequest.abort()
+        mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
       when 'playing'
         S.talk(roomName())
         keyboard = $scope.nes.keyboard
@@ -118,25 +116,30 @@ S.IndexController = ($scope) ->
     $scope.currentIndex = ($scope.currentIndex+1) % $scope.games.length
     setTimeout (-> $scope.$apply('direction=null')), 500
 
+  $scope.cancel = ->
+    $scope.status = 'select'
+
+    $scope.peer.destroy()
+    $scope.pairRequest.abort()
+
   $scope.play = ->
     $scope.status = 'waiting'
 
-    $scope.nes = nes = new JSNES
-      swfPath: '/audio/'
-      ui: JSNESUI
+    $scope.nes = nes = new JSNES swfPath: '/audio/', ui: JSNESUI
 
-    pair $scope.currentGame.urlSafeName(), (socket, master) ->
-      if master
-        m = new S.MasterNes(nes, socket)
-        m.loadRom $scope.currentGame.rom, ->
-          m.romInitialized()
-          m.selectedRom = $scope.currentGame.rom
-          m.partner "Rom:Changed", m.selectedRom
-          m.onRomLoaded m.selectedRom
-      else
-        new S.SlaveNes(nes, socket)
+    $http.get($scope.currentGame.url).success (room: room) ->
+      pair room, (socket, master) ->
+        if master
+          m = new S.MasterNes(nes, socket)
+          m.loadRom $scope.currentGame.rom, ->
+            m.romInitialized()
+            m.selectedRom = $scope.currentGame.rom
+            m.partner "Rom:Changed", m.selectedRom
+            m.onRomLoaded m.selectedRom
+        else
+          new S.SlaveNes(nes, socket)
 
-      $scope.$apply 'status = "playing"'
+        $scope.status = 'playing'
 
 class Socket
   constructor: (conn) ->

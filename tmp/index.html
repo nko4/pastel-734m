@@ -1,0 +1,17 @@
+<html ng-app='foo'>
+  <div ng-controller='F.IndexController'>
+    {{game}}
+  </div>
+
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js"></script>
+  <script>
+    F = angular.module('foo', [])
+      .config(function($routeProvider, $locationProvider) {
+        $routeProvider.when('/play/:game', {controller: 'F.GameController'});
+        $locationProvider.html5Mode(true);
+      });
+    F.IndexController = function($scope, $routeParams) {
+      $scope.game = 'something';
+    }
+  </script>
+</html>
