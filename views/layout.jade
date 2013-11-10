@@ -1,5 +1,5 @@
 doctype 5
-html
+html( ng-app='sweetnes' )
   head
     title SweetN.ES
     != css('application')
@@ -14,5 +14,6 @@ html
     block content
 
     script(src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js')
+    script( src='//cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js' )
     != js('application')
     block script
