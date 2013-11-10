@@ -54,12 +54,26 @@ S.IndexController = ($scope) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = 1
+  $scope.userAgent
 
   pair = (room, cb) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
+    userAgentString = navigator.userAgent
+
+    if userAgentString.indexOf("Firefox")> 0
+      browser = "Firefox"
+    else if userAgentString.indexOf("Chrome/30") > 0
+      browser = "Chrome"
+    else if userAgentString.indexOf("Chrome/31") > 0
+      browser = "Chrome-Beta"
+    else
+      browser = "unknown"
+
+    userAgentRoom = "#{browser}-#{room}"
+
+    $scope.pairRequest = $.getJSON "/pair/#{userAgentRoom}/#{id}", (data) ->
       if data.master
         S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
         S.conn.on 'open', ->
