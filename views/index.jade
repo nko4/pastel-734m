@@ -23,6 +23,11 @@ block content
       a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
 
+      #room
+        | WITH
+        #public.option.selected anyone
+        #private.option friend
+
       #instructions
         p
           |Press

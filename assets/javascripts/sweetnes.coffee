@@ -66,7 +66,22 @@ S.IndexController = ($scope) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    $scope.pairRequest = $.getJSON "/pair/#{room}-#{S.browser}/#{id}", (data) ->
+    userAgentString = navigator.userAgent
+
+    if userAgentString.indexOf("Firefox")> 0
+      browser = "Firefox"
+    else if userAgentString.indexOf("Chrome/30") > 0
+      browser = "Chrome"
+    else if userAgentString.indexOf("Chrome/31") > 0
+      browser = "Chrome-Beta"
+    else
+      browser = "unknown"
+
+    userAgentRoom = "#{browser}-#{room}"
+
+    $scope.shareableUrl = "/pair/#{userAgentRoom}/#{id}"
+
+    $scope.pairRequest = $.getJSON "/pair/#{userAgentRoom}/#{id}", (data) ->
       if data.master
         S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
         S.conn.on 'open', ->
@@ -87,6 +102,8 @@ S.IndexController = ($scope) ->
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
 
+  $scope.privateRoom = false
+
   $scope.$watch 'status', (status) ->
     mousetrap.reset()
     $(document).unbind()
@@ -95,6 +112,8 @@ S.IndexController = ($scope) ->
         mousetrap.bind 'enter', -> $scope.$apply 'play()'
         mousetrap.bind 'left',  -> $scope.$apply 'left()'
         mousetrap.bind 'right', -> $scope.$apply 'right()'
+        mousetrap.bind 'up',    -> $scope.$apply 'up()'
+        mousetrap.bind 'down',  -> $scope.$apply 'down()'
       when 'waiting'
         mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
       when 'playing'
@@ -119,6 +138,16 @@ S.IndexController = ($scope) ->
     $scope.status = 'select'
     $scope.peer.destroy()
     $scope.pairRequest.abort()
+
+  $scope.up = ->
+    classes(document.getElementById("public")).add("selected")
+    classes(document.getElementById("private")).remove("selected")
+    $scope.privateRoom = false
+
+  $scope.down = ->
+    classes(document.getElementById("public")).remove("selected")
+    classes(document.getElementById("private")).add("selected")
+    $scope.privateRoom = true
 
   $scope.play = ->
     $scope.status = 'waiting'
