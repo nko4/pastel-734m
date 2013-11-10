@@ -2,6 +2,8 @@
   "name": "sweetnes",
   "dependencies": {
     "component/event": "0.1.1",
-    "component/mousetrap": "0.0.1"
-  }
+    "component/mousetrap": "0.0.1",
+    "component/classes": "1.1.3"
+  },
+  "remotes": []
 }

@@ -178,6 +178,11 @@ path
     height: 74px
     opacity: 0.2
     width: 74px
+    cursor: pointer
+    transition: opacity 0.1s, border-color 0.3s
+
+    &.mute
+      border-color: red
 
     &#mic
       float: left
@@ -189,7 +194,6 @@ path
           height: 42px
 
     &#speaker
-      transition: opacity 0.1s
       float: right
       margin-right: 50px
       svg
