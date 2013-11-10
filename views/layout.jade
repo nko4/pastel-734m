@@ -3,18 +3,18 @@ html( ng-app='sweetnes' )
   head
     title SweetN.ES
     != css('application')
-    script(src="/scripts/build.js")
-    script(src="//use.typekit.net/jyo4lba.js")
-    script
-      try{Typekit.load();}catch(e){};
-      window.mousetrap = require('mousetrap');
-      window.events = require('event');
-      window.classes = require('classes');
 
   body
     block content
 
     script(src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js')
-    script( src='//cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js' )
+    script(src='//cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js')
+    script(src='/scripts/build.js')
+    script(src='//use.typekit.net/jyo4lba.js')
+    script.
+      try{Typekit.load();}catch(e){};
+      window.mousetrap = require('mousetrap');
+      window.events = require('event');
+      window.classes = require('classes');
     != js('application')
     block script
