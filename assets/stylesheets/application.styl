@@ -94,14 +94,21 @@ path
     font-weight: 100
     cursor: pointer
 
+.waiting #current
+  transition: none
+
+.select #current
+  opacity: 0.7
+
 #current
   font-size: 5em
   font-weight: bold
   font-family: helvetica
   color: white
   margin-top: 150px
-  opacity: 0.7
+  opacity: 0
   white-space: nowrap
+  transition: opacity 1s
 
 .shift
   &.left
@@ -151,16 +158,30 @@ path
   right: 0
   border-left: 2px solid white
 
+.select #instructions
+  opacity: 0
+  height: 0
+  transition: none
+
 #instructions
   text-align: center
-  margin-bottom: 70px
+  transition: opacity 1s
+  margin-top: 50px
+
+  span
+    font-weight: bold
+    text-align: center
+    padding: 5px
+    line-height: 21px
+
+  .special
+    font-variant: small-caps
 
   .button, .key
     display: inline-block
     width: 20px
     height: 20px
     border: 2px solid white
-    text-align: center
     font-weight: bold
     padding: 5px
     line-height: 21px
@@ -168,6 +189,8 @@ path
 
   .button
     border-radius: 20px
+    color: crimson
+    border-color: crimson
 
   .key
     border-radius: 5px

@@ -23,7 +23,39 @@ block content
       a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
 
-      #current( ng-show="status == 'select'" )
+      #instructions
+        p
+          |Press
+          span.key Z
+          |for
+          span.button A
+        p
+          |Press
+          span.key X
+          |for
+          span.button B
+
+        p
+          |Press
+          span ENTER
+          |for
+          span.special start
+
+        p
+          |Press
+          span CTRL
+          |for
+          span.special select
+
+        p
+          |And
+          span ARROWS
+          |for
+          span.special +
+
+
+
+      #current
         svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
              viewBox="0 0 64 64", ng-click='left()', class='arrow shift {{direction == "left" && "left"}}' )
           g: path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
