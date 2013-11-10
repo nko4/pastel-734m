@@ -6,7 +6,6 @@ class S.Socket
   constructor: (conn) ->
     @conn = conn
     @callbacks = {}
-    console.log 'new socket', conn
     @conn.on 'data', (data) =>
       @callbacks[data.key](data.data)
 
@@ -26,8 +25,8 @@ S.pair = (room, cb) ->
     console.log 'paired', data
     if data.master
       S.conn = peer.connect data.id, reliable: true, serialization: 'json'
-      peer.on 'connection', (conn) -> console.log 'wth'
-      cb new S.Socket(S.conn), data.master if cb
+      S.conn.on 'open', ->
+        cb new S.Socket(S.conn), data.master if cb
     else
       peer.on 'connection', (conn) ->
         S.conn = conn

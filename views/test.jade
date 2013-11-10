@@ -1,0 +1,16 @@
+extends layout
+
+block script
+  script
+    S.pair(1, function(socket, master) {
+      conn = socket.conn
+      conn.on('data', function(data) { console.log(data) });
+      if (master) {
+        for (var i = 0; i < 5; i++)
+          conn.send({ n: i, payload: Array(200) });
+        for (var i = 0; i < 5; i++)
+          conn.send({ n: i, payload: Array(2500) });
+        for (var i = 0; i < 5; i++)
+          conn.send({ n: i, payload: Array(300) });
+      }
+    });

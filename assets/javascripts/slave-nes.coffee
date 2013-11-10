@@ -11,7 +11,7 @@ class S.SlaveNes extends S.BaseNes
       @socket.send JSON.stringify(ok: 1)
 
     @socket.on "Rom:Changed", (rom_location) =>
-      console.log "Rom changed to " + rom_location
+      console.log "Got rom changed."
       @selectedRom = rom_location
       @nes.ppu.reset()
       @loadRom rom_location
@@ -111,11 +111,13 @@ class S.SlaveNes extends S.BaseNes
       @onRomLoaded @selectedRom
 
     @socket.on "PPU:Frame", (data) =>
-      if @current_instruction is data["instruction"]
-        @nes.ppu.startFrame()
-        @renderFrame data["frame_instructions"]
-        @nes.ppu.startVBlank()
-      @current_instruction += 1
+      if data.instruction >= @current_instruction
+        #console.log 'good', data.instruction #, data.frame_instructions
+        if @current_instruction is data["instruction"]
+          @nes.ppu.startFrame()
+          @renderFrame data["frame_instructions"]
+          @nes.ppu.startVBlank()
+        @current_instruction += 1
 
 
     # TODO: we should only preventDefault for non-controller keys. 

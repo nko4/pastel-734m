@@ -60,14 +60,12 @@ BufferBuilder.prototype.getBuffer = function() {
 };
 exports.BinaryPack = {
   unpack: function(data){
-    return JSON.parse(data);
+    var unpacker = new Unpacker(data);
+    return unpacker.unpack();
   },
   pack: function(data, utf8){
-/*    var packer = new Packer(utf8);
+    var packer = new Packer(utf8);
     var buffer = packer.pack(data);
-    return buffer;
-*/
-    buffer = JSON.stringify(data);
     return buffer;
   }
 };
@@ -315,7 +313,7 @@ function Packer(utf8){
   this.bufferBuilder = new BufferBuilder();
 }
 
-Packer.prototype.pack = function(value){
+Packer.prototype.pack = function(value, skipReturn){
   var type = typeof(value);
   if (type == 'string'){
     this.pack_string(value);
@@ -367,7 +365,10 @@ Packer.prototype.pack = function(value){
   } else {
     throw new Error('Type "' + type + '" not yet supported');
   }
-  return this.bufferBuilder.getBuffer();
+  if (!skipReturn)
+    return this.bufferBuilder.getBuffer();
+  else
+    this.bufferBuilder._flush();
 }
 
 
@@ -425,7 +426,7 @@ Packer.prototype.pack_array = function(ary){
     throw new Error('Invalid length');
   }
   for(var i = 0; i < length ; i++){
-    this.pack(ary[i]);
+    this.pack(ary[i], true);
   }
 }
 
@@ -495,8 +496,8 @@ Packer.prototype.pack_object = function(obj){
   }
   for(var prop in obj){
     if (obj.hasOwnProperty(prop)){
-      this.pack(prop);
-      this.pack(obj[prop]);
+      this.pack(prop, true);
+      this.pack(obj[prop], true);
     }
   }
 }
@@ -757,7 +758,7 @@ function Reliable(dc, debug) {
 Reliable.prototype.send = function(msg) {
   // Determine if chunking is necessary.
   var bl = util.pack(msg);
-  if (bl.length < this._mtu) {
+  if (bl.size < this._mtu) {
     this._handleSend(['no', bl]);
     return;
   }
@@ -915,7 +916,7 @@ Reliable.prototype._handleMessage = function(msg) {
 
       var n = msg[2];
       var chunk = msg[3];
-      data.chunks[n] = chunk;
+      data.chunks[n] = new Uint8Array(chunk);
 
       // If we get the chunk we're looking for, ACK for next missing.
       // Otherwise, ACK the same N again.
@@ -935,7 +936,7 @@ Reliable.prototype._handleMessage = function(msg) {
 // Chunks BL into smaller messages.
 Reliable.prototype._chunk = function(bl) {
   var chunks = [];
-  var size = bl.length;
+  var size = bl.size;
   var start = 0;
   while (start < size) {
     var end = Math.min(size, start + this._mtu);
@@ -1002,8 +1003,7 @@ Reliable.prototype._complete = function(id) {
   util.log('Completed called for', id);
   var self = this;
   var chunks = this._incoming[id].chunks;
-//  var bl = new Blob(chunks);
-  var bl = chunks.join('')
+  var bl = new Blob(chunks);
   util.blobToArrayBuffer(bl, function(ab) {
     self.onmessage(util.unpack(ab));
   });
@@ -1285,28 +1285,25 @@ var util = {
 
   // Binary stuff
   blobToArrayBuffer: function(blob, cb){
-    cb(blob)
-/*
     var fr = new FileReader();
     fr.onload = function(evt) {
       cb(evt.target.result);
     };
     fr.readAsArrayBuffer(blob);
-*/
   },
   blobToBinaryString: function(blob, cb){
-    cb(blob);
+    var fr = new FileReader();
+    fr.onload = function(evt) {
+      cb(evt.target.result);
+    };
+    fr.readAsBinaryString(blob);
   },
   binaryStringToArrayBuffer: function(binary) {
-    return binary
-/*    return JSON.parse(binary) */
-/*
     var byteArray = new Uint8Array(binary.length);
     for (var i = 0; i < binary.length; i++) {
       byteArray[i] = binary.charCodeAt(i) & 0xff;
     }
     return byteArray.buffer;
-*/
   },
   randomToken: function () {
     return Math.random().toString(36).substr(2);

@@ -2,17 +2,131 @@ extends layout
 
 block content
 
-  div#trailer
+  div#trailers
 
-  a#play( href='/play/contra' ) PLAY
+  a#play PLAY
 
   div#current
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-        viewBox="0 0 64 64")
+        viewBox="0 0 64 64", class="arrow")
       g
         path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
     span#name MEGA MAN
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
-        viewBox="0 0 64 64")
+        viewBox="0 0 64 64", class="arrow")
       g
         path(fill="none",stroke-width="5",stroke="#fff",d="M15.407061999999996,9.792208C15.407061999999996,9.792208,48.592939,31.887987,48.592939,31.887987C48.592939,31.887987,15.407061999999996,54.025974,15.407061999999996,54.025974")
+
+block script
+  script
+    window.sweetnes = window.sweetnes || {}
+
+    sweetnes.Game = function(name) {
+      this.name = name;
+      this.rom = name; // lowercase, replace space with underscore, append .rom
+      
+      var trailer = document.createElement("video");
+      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + ".mov");
+      trailer.setAttribute("class", "trailer");
+      trailer.setAttribute("autoplay");
+      trailer.setAttribute("loop");
+      
+      document.getElementById("trailers").appendChild(trailer);
+
+      this.trailer = trailer;
+    }
+
+    sweetnes.Game.prototype.urlSafeName = function() {
+      return this.name.replace(/\./g, '').replace(/ /g, '_').toLowerCase();
+    }
+
+    sweetnes.Games = new Ring();
+
+    ["Bubble Bobble", "Tetris", "Super Mario Bros. 3", "Contra"].forEach(function(name) {
+      sweetnes.Games.push(new sweetnes.Game(name));
+    });
+
+    sweetnes.updateGameName = function() {
+      var plate = document.getElementById("name");
+      plate.innerHTML = sweetnes.Games.get().name;
+    }
+
+    sweetnes.play = function() {
+      window.location = "/play/" + sweetnes.Games.get().urlSafeName();
+    }
+
+    var playButton = document.getElementById("play");
+    
+    sweetnes.hideCurrentTrailer = function () {
+      var currentVideo = sweetnes.Games.get().trailer;
+
+      currentVideo.style.opacity = 0;
+    }
+
+    sweetnes.showCurrentTrailer = function () {
+      var currentVideo = sweetnes.Games.get().trailer;
+
+      currentVideo.style.opacity = 0.3;
+    }
+
+    // Can just do this onLoad
+    var arrows = document.getElementsByClassName("arrow");
+
+    sweetnes.prevGame = function() {
+      var arrow = arrows[0];
+
+      arrow.setAttribute("class", "arrow");
+      setTimeout(function() {
+        arrow.setAttribute("class", "arrow shift left");
+      }, 1);
+
+      sweetnes.hideCurrentTrailer();
+      sweetnes.Games.prev();
+      sweetnes.showCurrentTrailer();
+      sweetnes.updateGameName();
+    }
+
+    sweetnes.nextGame = function() {
+      var arrow = arrows[1];
+
+      arrow.setAttribute("class", "arrow");
+      setTimeout(function() {
+        arrow.setAttribute("class", "arrow shift right");
+      }, 1);
+
+      sweetnes.hideCurrentTrailer();
+      sweetnes.Games.next();
+      sweetnes.showCurrentTrailer();
+      sweetnes.updateGameName();
+    }
+
+    var onceFlags = {};
+    var onceEvery = function(fn, delay) {
+      return function() {
+        if (onceFlags[fn]) {
+          // Do nothing
+        } else {
+          onceFlags[fn] = true;
+          fn();
+          setTimeout(function() {
+            delete onceFlags[fn];
+          }, delay);
+        }
+      }
+    }
+
+    // Could make these bindings implicit by setting some data attribute
+    // on actual elements instead. Totally better.
+    event.bind(playButton, "click", sweetnes.play);
+    event.bind(arrows[0], "click", onceEvery(sweetnes.prevGame, 500));
+    event.bind(arrows[1], "click", onceEvery(sweetnes.nextGame));
+
+    mousetrap.bind("return", sweetnes.play);
+    mousetrap.bind("left", onceEvery(sweetnes.prevGame, 500));
+    mousetrap.bind("right", onceEvery(sweetnes.nextGame, 500));
+
+    // Initialize
+    sweetnes.showCurrentTrailer();
+    sweetnes.updateGameName();
+
+

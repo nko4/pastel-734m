@@ -50,6 +50,9 @@ fs.readFile '/usr/share/dict/words', (err, data) ->
 app.get '/', (req, res) ->
   res.render 'index'
 
+app.get '/test', (req, res) ->
+  res.render 'test'
+
 app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
   game = req.params[0]
   if room = req.params[1]
