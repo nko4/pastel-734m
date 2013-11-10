@@ -119,14 +119,6 @@ S.IndexController = ($scope) ->
 
       $scope.$apply 'status = "playing"'
 
-    ###
-    $http.get("/roms/#{$scope.currentGame.urlSafeName()}.nes", responseType: 'text/plain; charset=x-user-defined')
-      .success (data) ->
-        debugger
-        nes.loadRom data
-        nes.start()
-    ###
-
 class Socket
   constructor: (conn) ->
     @conn = conn
