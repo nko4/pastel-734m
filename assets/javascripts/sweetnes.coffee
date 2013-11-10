@@ -155,6 +155,32 @@ S.pair = (room, cb) ->
         S.conn = conn
         cb new Socket(S.conn), data.master if cb
 
+onVolume = (stream, fn) ->
+  audioContext = new AudioContext()
+  sourceNode = audioContext.createMediaStreamSource(stream)
+
+  analyser = audioContext.createAnalyser()
+  analyser.smoothingTimeConstant = 0.3
+  analyser.fftSize = 1024
+
+  processor = audioContext.createScriptProcessor(2048, 1, 1)
+  processor.connect(audioContext.destination)
+
+  sourceNode.connect(analyser)
+  analyser.connect(processor)
+
+  processor.onaudioprocess = () ->
+    array = new Uint8Array(analyser.frequencyBinCount)
+    analyser.getByteFrequencyData(array)
+
+    volume = 0
+
+    for value in array
+      volume += value
+
+    volume /= array.length
+    fn(volume)
+
 S.talk = (room, cb) ->
   id = Math.ceil(Math.random() * 1000000).toString()
   peer = new Peer id, host: location.hostname, port: 8001
@@ -166,53 +192,35 @@ S.talk = (room, cb) ->
 
     if data.master
      getUserMedia {video: false, audio: true}, (stream) ->
+        onVolume stream, (volume) ->
+          mic = document.getElementById("mic")
+          mic.style.opacity = 0.1 + (volume / 100 * 3)
+
         call = peer.call data.id, stream
         call.on 'stream', (stream) ->
-          audioContext = new AudioContext()
-          sourceNode = audioContext.createMediaStreamSource(stream)
+          # Tight coupling for the loss
+          # This code takes the MediaStream for audio chat
+          # and analyzes the volume in order to light up
+          # our speaker icon; gives good feedback to
+          # users that there's someone on the other end
+          onVolume stream, (volume) ->
+            speaker = document.getElementById("speaker")
+            speaker.style.opacity = 0.1 + (volume / 100 * 3)
 
-          analyser = audioContext.createAnalyser()
-          analyser.smoothingTimeConstant = 0.3
-          analyser.fftSize = 1024
-
-          javascriptNode = audioContext.createScriptProcessor(2048, 1, 1)
-          javascriptNode.connect(audioContext.destination)
-
-          sourceNode.connect(analyser)
-          analyser.connect(javascriptNode)
-          sourceNode.connect(audioContext.destination)
-
-          getAverageVolume = (array) ->
-            values = 0
-            average
-
-            length = array.length
-            for value in array
-              values += value
-
-            average = values / length
-            return average
-
-          javascriptNode.onaudioprocess = () ->
-            array = new Uint8Array(analyser.frequencyBinCount)
-            analyser.getByteFrequencyData(array)
-            average = getAverageVolume(array)
-
-            console.log(average)
-
-          #audio.mozSrcObject = stream
-          #audio.autoplay = true
-          #audio.volume = 1
-          #audio.play()
-
-          #document.body.appendChild(audio)
       , (err) ->
         console.log 'Failed to get local stream', err
     else
       peer.on 'call', (call) ->
         getUserMedia {video: false, audio: true}, (stream) ->
+          onVolume stream, (volume) ->
+            mic = document.getElementById("mic")
+            mic.style.opacity = 0.1 + (volume / 100 * 3)
+
           call.answer stream
           call.on 'stream', (stream) ->
+            onVolume stream, (volume) ->
+              speaker = document.getElementById("speaker")
+              speaker.style.opacity = 0.1 + (volume / 100 * 3)
           #  audio.mozSrcObject = stream
           #  audio.autoplay = true
           #  audio.volume = 1
