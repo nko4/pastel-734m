@@ -19,6 +19,9 @@ body
   text-rendering: optimizeLegibility
   color: white
 
+  color: white
+  font-family: "source-sans-pro", sans-serif
+
 .arrow
   position: relative
   top: 5px
@@ -53,12 +56,10 @@ path
   text-decoration: none
   font-size: 70px
   font-weight: bold
-  font-family: "source-sans-pro", sans-serif
   border: 5px solid white
   padding: 0 10px
   margin: 0 auto
   text-align: center
-  color: white
   width: 200px
   margin-top: 150px
   display: block
@@ -110,3 +111,64 @@ path
 
 #next
   position: absolute
+
+#info
+  width: 300px
+  position: absolute
+  right: 0
+  border-left: 2px solid white
+
+#instructions
+  text-align: center
+  margin-bottom: 70px
+
+  .button, .key
+    display: inline-block
+    width: 20px
+    height: 20px
+    border: 2px solid white
+    text-align: center
+    font-weight: bold
+    padding: 5px
+    line-height: 21px
+    margin: 0 15px
+
+  .button
+    border-radius: 20px
+
+  .key
+    border-radius: 5px
+
+
+#audio
+  svg
+    display: block
+    height: 74px
+    margin: 0 auto
+    fill: white
+
+  div
+    border: 3px solid white
+    border-radius: 1000px
+    height: 74px
+    opacity: 0.5
+    width: 74px
+
+    &#mic
+      float: left
+      margin-left: 50px
+      svg
+        width: 50px
+        path
+          width: 28px
+          height: 42px
+
+    &#speaker
+      float: right
+      margin-right: 50px
+      svg
+        width: 40px
+      path
+        height: 34px
+        width: 34px
+

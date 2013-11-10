@@ -65,6 +65,9 @@ app.get /^\/play\/([^\/]+)(?:\/([^\/]+))?$/, (req, res) ->
       room = games[game] = words[Math.floor(Math.random() * words.length)]
     res.redirect "/play/#{game}/#{room}"
 
+app.get '/room', (req, res) ->
+  res.render 'room'
+
 app.get '/pair/:room/:id', (req, res) ->
   id = req.param('id')
   room = req.param('room')
