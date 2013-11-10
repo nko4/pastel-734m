@@ -10,7 +10,7 @@ block content
       canvas#emulator( width=256 height=240 )
 
     .meta
-      a#play.status( ng-show="status == 'select'" ) PLAY
+      a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
 
       #current( ng-show="status == 'select'" )
