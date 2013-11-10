@@ -4,14 +4,21 @@ block script
   script
     S.pair(1, function(socket, master) {
       conn = socket.conn
-      conn.on('data', function(data) { console.log(data) });
+      count = 0
+      conn.on('data', function(data) { 
+        if(data.n != count) { throw "Holy SHit" }
+        count += 1
+        console.log(data) 
+      });
       if (master) {
-        for (var i = 0; i < 100; i++)
+        //for (var i = 0; i < 1; i++)
+        //    conn.send({ n: i, payload: Array(250000) });
+        //  for (var i = 0; i < 2; i++)
+        //    conn.send({ n: i, payload: Array(250000) });
+        console.time("Here we go")
+        for (var i = 0; i < 1000; i++)
           conn.send({ n: i, payload: Array(1) });
-        for (var i = 0; i < 2; i++)
-          conn.send({ n: i, payload: Array(250000) });
-        for (var i = 0; i < 100; i++)
-          conn.send({ n: i, payload: Array(2) });
+        console.timeEnd("Here we go")
       }
     });
 
