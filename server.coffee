@@ -10,7 +10,7 @@ app = express()
 process.chdir __dirname
 
 app.configure ->
-  app.set 'port', if process.env.NODE_ENV is 'production' then 80 else 8000
+  app.set 'port', if app.get('env') is 'production' then 80 else 8000
 
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
@@ -48,7 +48,10 @@ fs.readFile '/usr/share/dict/words', (err, data) ->
 # Routes
 # ------
 app.get '/', (req, res) ->
-  res.render 'index'
+  if app.get('env') is 'production' and req.host.toLowerCase() isnt 'sweetn.es'
+    res.redirect 'http://sweetn.es'
+  else
+    res.render 'index'
 
 app.get '/test', (req, res) ->
   res.render 'test'
