@@ -58,6 +58,7 @@ class JSNESUI
     # console.log 'nes:', message
 
 S.IndexController = ($scope, $http) ->
+  $scope.S = S
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Tetris 2", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = Math.floor(Math.random($scope.games.length) * 10 % $scope.games.length)
@@ -173,6 +174,9 @@ class Socket
     @callbacks[key] = callback
 
 S.talk = (room, cb) ->
+  if typeof(AudioContext) == "undefined"
+    return
+
   id = Math.ceil(Math.random() * 1000000).toString()
   peer = new Peer id, host: location.hostname, port: 8001
 

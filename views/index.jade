@@ -5,7 +5,7 @@ block content
   .ng-cloak( ng-controller='S.IndexController' ng-class='status' )
 
     //- WebRTC Audio related elements
-    #audio
+    #audio(ng-show='S.browser == "firefox"')
       #mic
         svg(xmlns="http://www.w3.org/2000/svg",xmlns:xlink="http://www.w3.org/1999/xlink",version="1.1",x="0px",y="0px",viewBox="0 0 512 512",enable-background="new 0 0 512 512",xml:space="preserve",xmlns:xml="http://www.w3.org/XML/1998/namespace")
           path(id="microphone-3-icon",d="M188,240.084v-122c0-37.555,30.445-68,68-68c37.556,0,68,30.445,68,68v122c0,37.555-30.444,68-68,68  C218.445,308.084,188,277.639,188,240.084z M354,205.084v35c0,54.037-43.963,98-98,98s-98-43.963-98-98v-35h-40v35  c0,68.432,50.071,125.379,115.5,136.156v45.676H176v40h160v-40h-57.5V376.24C343.929,365.463,394,308.516,394,240.084v-35H354z")
