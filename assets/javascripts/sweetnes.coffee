@@ -76,7 +76,6 @@ S.IndexController = ($scope, $http) ->
     $scope.cancelWatchdog = ->
       clearTimeout(watchdog)
       $scope.scheduleWatchdog()
-      console.log('canceled')
 
     $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
       if data.master
