@@ -44,21 +44,16 @@ block script
 
     sweetnes.updateGameName();
 
-    var play = function() {
+    sweetnes.play = function() {
       window.location = "/play/" + sweetnes.Games.get().urlSafeName();
     }
 
     var playButton = document.getElementById("play");
-    event.bind(playButton, "click", play);
 
     // Can just do this onLoad
     var arrows = document.getElementsByClassName("arrow");
 
-    // Could make these bindings implicit by setting some data attribute
-    // on actual elements instead. Totally better.
-    mousetrap.bind("return", play);
-
-    mousetrap.bind("left", function() {
+    sweetnes.prevGame = function() {
       var arrow = arrows[0];
 
       arrow.setAttribute("class", "arrow");
@@ -68,12 +63,10 @@ block script
 
       sweetnes.Games.prev();
       sweetnes.updateGameName();
-    });
+    }
 
-    mousetrap.bind("right", function() {
+    sweetnes.nextGame = function() {
       var arrow = arrows[1];
-
-      console.log("hmm");
 
       arrow.setAttribute("class", "arrow");
       setTimeout(function() {
@@ -82,4 +75,14 @@ block script
 
       sweetnes.Games.next();
       sweetnes.updateGameName();
-    });
+    }
+
+    // Could make these bindings implicit by setting some data attribute
+    // on actual elements instead. Totally better.
+    event.bind(playButton, "click", sweetnes.play);
+    event.bind(arrows[0], "click", sweetnes.prevGame);
+    event.bind(arrows[1], "click", sweetnes.nextGame);
+
+    mousetrap.bind("return", sweetnes.play);
+    mousetrap.bind("left", sweetnes.prevGame);
+    mousetrap.bind("right", sweetnes.nextGame);
