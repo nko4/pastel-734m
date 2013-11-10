@@ -14,15 +14,13 @@ class S.Socket
   send: (data) ->
     @emit 'message', data
   on: (key, callback) ->
-    console.log 'register', key
     @callbacks[key] = callback
 
 S.pair = (room, cb) ->
   id = Math.ceil(Math.random() * 1000000).toString()
-  peer = new Peer id, host: location.hostname, port: 8001, debug: 3
+  peer = new Peer id, host: location.hostname, port: 8001
 
   $.getJSON "/pair/#{room}/#{id}", (data) ->
-    console.log 'paired', data
     if data.master
       S.conn = peer.connect data.id, reliable: true, serialization: 'json'
       S.conn.on 'open', ->

@@ -11,7 +11,6 @@ class S.SlaveNes extends S.BaseNes
       @socket.send JSON.stringify(ok: 1)
 
     @socket.on "Rom:Changed", (rom_location) =>
-      console.log "Got rom changed."
       @selectedRom = rom_location
       @nes.ppu.reset()
       @loadRom rom_location
@@ -93,7 +92,6 @@ class S.SlaveNes extends S.BaseNes
       @nes.ppu.updateControlReg2 data["controlReg2Value"]
       @nes.ppu.startVBlank()
       @current_instruction = data["instruction"]
-      console.log "Waiting for instruction " + @current_instruction
 
     @socket.on "MMAP:Initialize", (data) =>
       #TODO: Respec mapperType
@@ -112,7 +110,6 @@ class S.SlaveNes extends S.BaseNes
 
     @socket.on "PPU:Frame", (data) =>
       if data.instruction >= @current_instruction
-        #console.log 'good', data.instruction #, data.frame_instructions
         if @current_instruction is data["instruction"]
           @nes.ppu.startFrame()
           @renderFrame data["frame_instructions"]
@@ -248,7 +245,6 @@ class S.SlaveNes extends S.BaseNes
   # into Sprite RAM.
   sramDMA: (value, datum) ->
     data = undefined
-    console.log "sramDMA" if @nes.ppu.debug
     i = @nes.ppu.sramAddress
 
     while i < 256

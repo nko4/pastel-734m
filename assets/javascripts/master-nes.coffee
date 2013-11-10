@@ -31,7 +31,6 @@ class S.MasterNes extends S.BaseNes
         @partner "Rom:Changed", @selectedRom
 
     @socket.on "state:partner_ready", =>
-      console.log "Player is ready"
       @syncFrame = true
       @nes.start()
 
@@ -102,9 +101,7 @@ class S.MasterNes extends S.BaseNes
       self.f_mmapWrite address, value
 
   syncPPU: ->
-    console.log "Syncing PPU"
     @nes.ppu.ptTile[1].initialized = true
-    console.log @nes.ppu.ptTile[1]
     self = this
     payload =
       instruction: self.instruction_id
@@ -199,7 +196,6 @@ class S.MasterNes extends S.BaseNes
     self = this
     self.ppuEndFrame.call self.nes.ppu
     if self.syncFrame
-      #console.log self.instruction_id #, self.frame_instructions
       self.partner "PPU:Frame",
         instruction: self.instruction_id
         frame_instructions: self.frame_instructions
@@ -221,7 +217,6 @@ class S.MasterNes extends S.BaseNes
 
   sramDMA: (value) ->
     self = this
-    console.log "sramDMA"  if self.nes.ppu.debug
     baseAddress = value * 0x100
     data = undefined
     i = self.nes.ppu.sramAddress
@@ -322,7 +317,6 @@ class S.MasterNes extends S.BaseNes
     else
       frameRate = 1 / (now - self.lastSendTime) * 1000
 
-      #console.log(frameRate);
       if frameRate < 15
         frameRate = 15
       else frameRate = 60  if frameRate > 60
@@ -335,10 +329,8 @@ class S.MasterNes extends S.BaseNes
     self = this
     @nes.ui.romSelect.unbind "change"
     @nes.ui.romSelect.bind "change", ->
-      console.log self.nes
       self.loadRom self.nes.ui.romSelect.val(), ->
         self.romInitialized()
         self.selectedRom = self.nes.ui.romSelect.val()
-        console.log "Rom changed."
         self.partner "Rom:Changed", self.selectedRom
         self.onRomLoaded self.selectedRom
