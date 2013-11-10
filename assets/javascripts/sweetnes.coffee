@@ -83,6 +83,9 @@ S.IndexController = ($scope) ->
           S.conn = conn
           cb new Socket(S.conn), data.master if cb
 
+  roomName = () ->
+    $scope.currentGame.urlSafeName()
+
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
 
@@ -100,6 +103,7 @@ S.IndexController = ($scope) ->
           $scope.peer.destroy()
           $scope.pairRequest.abort()
       when 'playing'
+        S.talk(roomName())
         keyboard = $scope.nes.keyboard
         $(document)
           .bind('keyup',    (e) -> keyboard.keyUp(e))
@@ -171,11 +175,16 @@ S.talk = (room, cb) ->
   $.getJSON "/pair/#{room}/#{id}", (data) ->
     getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
     getUserMedia = getUserMedia.bind(navigator)
-    audio = document.createElement('audio')
 
     if data.master
      getUserMedia {video: false, audio: true}, (stream) ->
         S.mic = new Speaker(stream)
+
+        micIcon = document.getElementById "mic"
+        events.bind micIcon, "click", () ->
+          classes(micIcon).toggle("mute")
+          S.mic.mute()
+
         S.mic.onNoise (volume) ->
           mic = document.getElementById("mic")
           mic.style.opacity = 0.1 + (volume / 100 * 3)
@@ -183,6 +192,12 @@ S.talk = (room, cb) ->
         call = peer.call data.id, stream
         call.on 'stream', (stream) ->
           S.speaker = new Speaker(stream)
+
+          speakerIcon = document.getElementById "speaker"
+          events.bind speakerIcon, "click", () ->
+            classes(speakerIcon).toggle("mute")
+            S.speaker.mute()
+
           S.speaker.onNoise (volume) ->
             speaker = document.getElementById("speaker")
             speaker.style.opacity = 0.1 + (volume / 100 * 3)
@@ -193,6 +208,12 @@ S.talk = (room, cb) ->
       peer.on 'call', (call) ->
         getUserMedia {video: false, audio: true}, (stream) ->
           S.mic = new Speaker(stream)
+
+          micIcon = document.getElementById "mic"
+          events.bind micIcon, "click", () ->
+            classes(micIcon).toggle("mute")
+            S.mic.mute()
+
           S.mic.onNoise (volume) ->
             mic = document.getElementById("mic")
             mic.style.opacity = 0.1 + (volume / 100 * 3)
@@ -200,6 +221,12 @@ S.talk = (room, cb) ->
           call.answer stream
           call.on 'stream', (stream) ->
             S.speaker = new Speaker(stream)
+
+            speakerIcon = document.getElementById "speaker"
+            events.bind speakerIcon, "click", () ->
+              classes(speakerIcon).toggle("mute")
+              S.speaker.mute()
+
             S.speaker.onNoise (volume) ->
               speaker = document.getElementById("speaker")
               speaker.style.opacity = 0.1 + (volume / 100 * 3)

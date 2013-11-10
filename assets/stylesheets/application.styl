@@ -166,6 +166,8 @@ path
 
 
 #audio
+  position: relative;
+  z-index: 1
   svg
     display: block
     height: 74px
@@ -181,6 +183,7 @@ path
     cursor: pointer
     margin-top: 300px
     transition: opacity 1s, border-color 0.3s
+    z-index: 1000;
 
     &.mute
       border-color: red

@@ -63,11 +63,19 @@ window.Speaker = function(stream) {
   this.mute = function() {
     muted = !muted;
 
-    gain.gain.value = muted ? 0 : 1;
+    var audioTracks = self.stream.getAudioTracks();
+
+    for (var i = 0, l = audioTracks.length; i < l; i++) {
+      audioTracks[i].enabled = !muted;
+    }
   }
 
-  this.volume = function() {
+  this.getVolume = function() {
     return gain.gain.value;
+  }
+
+  this.setVolume = function(volume) {
+    gain.gain.value = volume;
   }
 
   this.setStream = function(stream) {
@@ -76,6 +84,7 @@ window.Speaker = function(stream) {
     }
 
     if (stream) {
+      self.stream = stream;
       self.source = context.createMediaStreamSource(stream);
       self.source.connect(gain);
       gain.connect(context.destination);
