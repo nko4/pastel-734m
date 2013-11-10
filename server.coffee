@@ -53,9 +53,6 @@ app.get '/', (req, res) ->
   else
     res.render 'index'
 
-app.get '/test', (req, res) ->
-  res.render 'test'
-
 app.get '/word', (req, res) ->
   word = words[Math.floor(Math.random() * words.length)].toLowerCase()
   res.send word
@@ -64,9 +61,9 @@ app.get '/pair/:room/:id', (req, res) ->
   id = req.param('id')
   room = req.param('room')
 
-  console.log "a new person for #{room}"
+  console.log "#{room}: checking"
   if waiting[room]
-    console.log "found a partner in #{room}"
+    console.log "#{room}: pairing"
     partner = waiting[room]
 
     res.json id: partner.id, master: false
@@ -74,11 +71,14 @@ app.get '/pair/:room/:id', (req, res) ->
 
     delete waiting[room]
   else
-    console.log "waiting in #{room}"
+    console.log "#{room}: waiting"
     waiting[room] = { id: id, res: res }
     res.on 'close', ->
       delete waiting[room]
-      console.log "leaving #{room}"
+      console.log "#{room}: leaving"
+
+app.get '/test', (req, res) ->
+  res.render 'test'
 
 # View Helpers
 # ------------
