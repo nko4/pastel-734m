@@ -38,4 +38,4 @@ window.Ring = function() {
   this.forEach = function(fn) {
     Array.prototype.forEach.apply(self, fn);
   }
-}
+};
