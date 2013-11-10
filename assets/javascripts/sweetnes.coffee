@@ -140,13 +140,9 @@ S.IndexController = ($scope) ->
     $scope.pairRequest.abort()
 
   $scope.up = ->
-    classes(document.getElementById("public")).add("selected")
-    classes(document.getElementById("private")).remove("selected")
     $scope.privateRoom = false
 
   $scope.down = ->
-    classes(document.getElementById("public")).remove("selected")
-    classes(document.getElementById("private")).add("selected")
     $scope.privateRoom = true
 
   $scope.play = ->

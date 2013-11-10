@@ -24,9 +24,9 @@ block content
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
 
       #room
-        | WITH
-        #public.option.selected anyone
-        #private.option friend
+        | with
+        .option( ng-class='{ selected: !privateRoom }', ng-click='up()' ) anyone
+        .option( ng-class='{ selected: privateRoom }', ng-click='down()' ) friend
 
       #instructions
         p
