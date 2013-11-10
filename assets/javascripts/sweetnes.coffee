@@ -129,3 +129,70 @@ S.pair = (room, cb) ->
       peer.on 'connection', (conn) ->
         S.conn = conn
         cb new Socket(S.conn), data.master if cb
+
+S.talk = (room, cb) ->
+  id = Math.ceil(Math.random() * 1000000).toString()
+  peer = new Peer id, host: location.hostname, port: 8001
+
+  $.getJSON "/pair/#{room}/#{id}", (data) ->
+    getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+    getUserMedia = getUserMedia.bind(navigator)
+    audio = document.createElement('audio')
+
+    if data.master
+     getUserMedia {video: false, audio: true}, (stream) ->
+        call = peer.call data.id, stream
+        call.on 'stream', (stream) ->
+          audioContext = new AudioContext()
+          sourceNode = audioContext.createMediaStreamSource(stream)
+
+          analyser = audioContext.createAnalyser()
+          analyser.smoothingTimeConstant = 0.3
+          analyser.fftSize = 1024
+
+          javascriptNode = audioContext.createScriptProcessor(2048, 1, 1)
+          javascriptNode.connect(audioContext.destination)
+
+          sourceNode.connect(analyser)
+          analyser.connect(javascriptNode)
+          sourceNode.connect(audioContext.destination)
+
+          getAverageVolume = (array) ->
+            values = 0
+            average
+
+            length = array.length
+            for value in array
+              values += value
+
+            average = values / length
+            return average
+
+          javascriptNode.onaudioprocess = () ->
+            array = new Uint8Array(analyser.frequencyBinCount)
+            analyser.getByteFrequencyData(array)
+            average = getAverageVolume(array)
+
+            console.log(average)
+
+          #audio.mozSrcObject = stream
+          #audio.autoplay = true
+          #audio.volume = 1
+          #audio.play()
+
+          #document.body.appendChild(audio)
+      , (err) ->
+        console.log 'Failed to get local stream', err
+    else
+      peer.on 'call', (call) ->
+        getUserMedia {video: false, audio: true}, (stream) ->
+          call.answer stream
+          call.on 'stream', (stream) ->
+          #  audio.mozSrcObject = stream
+          #  audio.autoplay = true
+          #  audio.volume = 1
+          #  audio.play()
+
+          #  document.body.appendChild(audio)
+        , (err) ->
+          console.log 'Failed to get local stream', err
