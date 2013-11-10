@@ -3,6 +3,18 @@
 
 window.S = angular.module 'sweetnes', []
 
+userAgentString = navigator.userAgent
+
+S.browser =
+  if userAgentString.indexOf("Firefox")> 0
+    "firefox"
+  else if userAgentString.indexOf("Chrome/30") > 0
+    "chrome"
+  else if userAgentString.indexOf("Chrome/31") > 0
+    "chrome_beta"
+  else
+    "unknown"
+
 class Game
   constructor: (name) ->
     @name = name
@@ -14,9 +26,7 @@ class Game
     @name.replace(/\./g, '').replace(/\s/g, '_').toLowerCase()
 
   videoSrc: ->
-    UA = navigator.userAgent
-    isFirefox = UA.indexOf("Firefox") > -1
-    format = if isFirefox then ".ogg" else ".mp4"
+    format = if S.browser is 'firefox' then ".ogg" else ".mp4"
     "/videos/#{@urlSafeName()}#{format}"
 
 class JSNESUI
@@ -60,20 +70,7 @@ S.IndexController = ($scope) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    userAgentString = navigator.userAgent
-
-    if userAgentString.indexOf("Firefox")> 0
-      browser = "Firefox"
-    else if userAgentString.indexOf("Chrome/30") > 0
-      browser = "Chrome"
-    else if userAgentString.indexOf("Chrome/31") > 0
-      browser = "Chrome-Beta"
-    else
-      browser = "unknown"
-
-    userAgentRoom = "#{browser}-#{room}"
-
-    $scope.pairRequest = $.getJSON "/pair/#{userAgentRoom}/#{id}", (data) ->
+    $scope.pairRequest = $.getJSON "/pair/#{room}-#{S.browser}/#{id}", (data) ->
       if data.master
         S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
         S.conn.on 'open', ->
