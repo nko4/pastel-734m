@@ -196,10 +196,11 @@ class S.MasterNes extends S.BaseNes
     self = this
     self.ppuEndFrame.call self.nes.ppu
     if self.syncFrame
-      self.partner "PPU:Frame",
+      @partner "PPU:Frame",
         instruction: self.instruction_id
         frame_instructions: self.frame_instructions
 
+    @socket.onHeartbeat()
     @frame_instructions = []
     self.instruction_id += 1
 

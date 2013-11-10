@@ -22,6 +22,7 @@ block content
     .meta
       a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR {{ privateRoom ? 'A FRIEND' : 'PLAYER' }}
+      #disconnect.status( ng-show="status == 'disconnect'") OTHER PLAYER QUIT
 
       #room( ng-show="status == 'select'" )
         | with
@@ -36,7 +37,9 @@ block content
 
         p Press <span>ENTER</span> for <span class="special">start</span>
         p Press <span>CTRL</span> for <span class="special">select</span>
-        p And <span>ARROWS</span> for <span class="special">+</span>
+        p Press <span>ARROWS</span> for <span class="special">+</span>
+
+        p And <span>ESC</span> to go back
 
       #current
         svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",

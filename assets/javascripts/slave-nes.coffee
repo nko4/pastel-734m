@@ -109,6 +109,7 @@ class S.SlaveNes extends S.BaseNes
       @onRomLoaded @selectedRom
 
     @socket.on "PPU:Frame", (data) =>
+      @socket.onHeartbeat()
       if data.instruction >= @current_instruction
         if @current_instruction is data["instruction"]
           @nes.ppu.startFrame()

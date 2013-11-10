@@ -67,15 +67,34 @@ S.IndexController = ($scope, $http) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
+    watchdog = null
+    $scope.scheduleWatchdog = ->
+      watchdog = setTimeout ->
+        $scope.$apply 'partnerQuit()'
+      , 15000
+
+    $scope.cancelWatchdog = ->
+      clearTimeout(watchdog)
+      $scope.scheduleWatchdog()
+      console.log('canceled')
+
     $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
       if data.master
         S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
-        S.conn.on 'open', ->
-          cb new Socket(S.conn), data.master if cb
+        S.conn.on 'open', =>
+          if cb
+            socket = new Socket(S.conn)
+            cb socket, data.master
+            socket.onHeartbeat = =>
+              $scope.cancelWatchdog()
       else
-        $scope.peer.on 'connection', (conn) ->
+        $scope.peer.on 'connection', (conn) =>
           S.conn = conn
-          cb new Socket(S.conn), data.master if cb
+          if cb
+            socket = new Socket(S.conn)
+            cb socket, data.master
+            socket.onHeartbeat = =>
+              $scope.cancelWatchdog()
 
   roomName = () ->
     $scope.currentGame.urlSafeName()
@@ -101,6 +120,8 @@ S.IndexController = ($scope, $http) ->
         mousetrap.bind 'up',    -> $scope.$apply 'up()'
         mousetrap.bind 'down',  -> $scope.$apply 'down()'
       when 'waiting'
+        mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
+      when 'disconnect'
         mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
       when 'playing'
         S.talk(roomName())
@@ -154,14 +175,19 @@ S.IndexController = ($scope, $http) ->
             m.selectedRom = $scope.currentGame.rom
             m.partner "Rom:Changed", m.selectedRom
             m.onRomLoaded m.selectedRom
+            $scope.scheduleWatchdog()
         else
           new S.SlaveNes(nes, socket)
+          $scope.scheduleWatchdog()
 
         $scope.$apply 'status = "playing"'
 
   if room = location.pathname.match(/^\/play\/([^/]+)/)?[1]
     $scope.privateRoom = true
     $scope.play room
+
+  $scope.partnerQuit = ->
+    $scope.status = 'disconnect'
 
 class Socket
   constructor: (conn) ->
@@ -170,6 +196,7 @@ class Socket
     @conn.on 'data', (data) =>
       @callbacks[data.key]?(data.data)
 
+  onHeartbeat: ->
   emit: (key, data) ->
     @conn.send key: key, data: data
   send: (data) ->
