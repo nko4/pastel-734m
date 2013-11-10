@@ -16,18 +16,15 @@ S.browser =
     "unknown"
 
 class Game
-  constructor: (name) ->
-    @name = name
-    @rom = name # lowercase, replace space with underscore, append .rom
-    @url = @videoSrc()
-    @romUrl = "/roms/#{@urlSafeName()}.nes"
+  constructor: (@name) ->
+    format = if S.browser is 'firefox' then ".ogg" else ".mp4"
+
+    @url = "/play/#{@urlSafeName()}-#{S.browser}"
+    @video = "/videos/#{@urlSafeName()}#{format}"
+    @rom = "/roms/#{@urlSafeName()}.nes"
 
   urlSafeName: ->
     @name.replace(/\./g, '').replace(/\s/g, '_').toLowerCase()
-
-  videoSrc: ->
-    format = if S.browser is 'firefox' then ".ogg" else ".mp4"
-    "/videos/#{@urlSafeName()}#{format}"
 
 class JSNESUI
   constructor: (nes) ->
@@ -64,7 +61,6 @@ S.IndexController = ($scope) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = 1
-  $scope.userAgent
 
   pair = (room, cb) ->
     id = Math.ceil(Math.random() * 1000000).toString()
@@ -132,9 +128,9 @@ S.IndexController = ($scope) ->
     pair $scope.currentGame.urlSafeName(), (socket, master) ->
       if master
         m = new S.MasterNes(nes, socket)
-        m.loadRom $scope.currentGame.romUrl, ->
+        m.loadRom $scope.currentGame.rom, ->
           m.romInitialized()
-          m.selectedRom = $scope.currentGame.romUrl
+          m.selectedRom = $scope.currentGame.rom
           m.partner "Rom:Changed", m.selectedRom
           m.onRomLoaded m.selectedRom
       else

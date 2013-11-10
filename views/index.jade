@@ -15,7 +15,7 @@ block content
 
     .media
       #trailers
-        video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='{ current: currentGame == game}')
+        video.trailer( ng-repeat='game in games', autoplay='true', loop='true', ng-src='{{game.video}}', ng-class='{ current: currentGame == game}')
 
       canvas#emulator( width=256 height=240 )
 
