@@ -145,7 +145,7 @@ S.IndexController = ($scope, $http) ->
         cb $scope.currentGame.url
 
     getRoom (room) ->
-      $scope.share = "#{location.href.replace(location.pathname, '')}/play/#{room}"
+      $scope.share = "#{location.protocol}//#{location.host}/play/#{room}"
       pair room, (socket, master) ->
         if master
           m = new S.MasterNes(nes, socket)
