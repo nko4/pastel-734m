@@ -736,6 +736,7 @@ function Reliable(dc, debug) {
   this._outgoing = {};
   // id: { ack: ['ack', id, n], chunks: [...] }
   this._incoming = {};
+  this._incomingDecoded = {};
   this._received = {};
 
   // Window size.
@@ -752,14 +753,17 @@ function Reliable(dc, debug) {
   this._queue = [];
 
   this._setupDC();
+
+  this._messageDeliverId = 0;
 };
 
 // Send a message reliably.
 Reliable.prototype.send = function(msg) {
   // Determine if chunking is necessary.
   var bl = util.pack(msg);
-  if (bl.size < this._mtu) {
-    this._handleSend(['no', bl]);
+  if (bl.length < this._mtu) {
+    this._handleSend(['no', this._count, bl]);
+    this._count += 1;
     return;
   }
 
@@ -863,9 +867,11 @@ Reliable.prototype._handleMessage = function(msg) {
   switch (msg[0]) {
     // No chunking was done.
     case 'no':
-      var message = id;
+      var message = msg[2];
       if (!!message) {
-        this.onmessage(util.unpack(message));
+        this._received[id] = true;
+        this._incomingDecoded[id] = util.unpack(message);
+        this._serializeOrder(id);
       }
       break;
     // Reached the end of the message.
@@ -893,7 +899,7 @@ Reliable.prototype._handleMessage = function(msg) {
           util.log('Time: ', new Date() - data.timer);
           delete this._outgoing[id];
         } else {
-          this._processAcks();
+          //this._processAcks();
         }
       }
       // If !data, just ignore.
@@ -1005,10 +1011,26 @@ Reliable.prototype._complete = function(id) {
   var chunks = this._incoming[id].chunks;
   var bl = new Blob(chunks);
   util.blobToArrayBuffer(bl, function(ab) {
-    self.onmessage(util.unpack(ab));
+    self._incomingDecoded[id] = util.unpack(ab);
+    self._serializeOrder(id);
   });
-  delete this._incoming[id];
 };
+
+
+Reliable.prototype._serializeOrder = function(deliveryId) {
+  var out_of_order = (this._messageDeliverId != deliveryId)
+
+  for (var message_id = this._messageDeliverId, yielded = 0; this._incomingDecoded[message_id]; message_id += 1, yielded += 1) {
+    this.onmessage(this._incomingDecoded[message_id])
+    delete this._incomingDecoded[message_id]
+    delete this._received[message_id]
+    this._messageDeliverId += 1
+  }
+
+  if (out_of_order) {
+    this._processAcks()
+  }
+}
 
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
 Reliable.higherBandwidthSDP = function(sdp) {
