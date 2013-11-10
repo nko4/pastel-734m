@@ -740,7 +740,7 @@ function Reliable(dc, debug) {
   this._received = {};
 
   // Window size.
-  this._window = 1000;
+  this._window = 20;
   // MTU.
   this._mtu = 500;
   // Interval for setInterval. In ms.
@@ -808,7 +808,7 @@ Reliable.prototype._intervalSend = function(msg) {
   if (self._queue.length === 0) {
     clearTimeout(self._timeout);
     self._timeout = null;
-    //self._processAcks();
+    self._processAcks();
   }
 };
 
@@ -899,7 +899,7 @@ Reliable.prototype._handleMessage = function(msg) {
           util.log('removing', id, 'Time:', new Date() - data.timer);
           delete this._outgoing[id];
         } else {
-          //this._processAcks();
+          this._processAcks();
         }
       }
       // If !data, just ignore.
@@ -1027,9 +1027,6 @@ Reliable.prototype._serializeOrder = function(deliveryId) {
     this._messageDeliverId += 1
   }
 
-  if (out_of_order) {
-    this._processAcks()
-  }
 }
 
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
