@@ -5,7 +5,6 @@ block content
   div#trailers
 
   a#play PLAY
-  div#redirect USE FIREFOX PLEASE
 
   div#current
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
@@ -28,11 +27,6 @@ block script
     var redirect = document.getElementById("redirect");
 
     window.isFirefox = window.UA.indexOf("Firefox") > -1;
-
-    if (!window.isFirefox) {
-      playButton.style.display = "none";
-      redirect.style.display = "block";
-    }
 
     var trailerFormat = window.isFirefox? ".ogg" : ".mp4";
 
@@ -135,9 +129,7 @@ block script
     event.bind(arrows[0], "click", onceEvery(sweetnes.prevGame, 500));
     event.bind(arrows[1], "click", onceEvery(sweetnes.nextGame));
 
-    if (window.isFirefox) {
-      mousetrap.bind("return", sweetnes.play);
-    }
+    mousetrap.bind("return", sweetnes.play);
     mousetrap.bind("left", onceEvery(sweetnes.prevGame, 500));
     mousetrap.bind("right", onceEvery(sweetnes.nextGame, 500));
 
