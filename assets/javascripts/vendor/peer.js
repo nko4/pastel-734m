@@ -758,10 +758,6 @@ function Reliable(dc, debug) {
 Reliable.prototype.send = function(msg) {
   // Determine if chunking is necessary.
   var bl = util.pack(msg);
-  if (bl.size < this._mtu) {
-    this._handleSend(['no', bl]);
-    return;
-  }
 
   this._outgoing[this._count] = {
     ack: 0,
@@ -804,12 +800,12 @@ Reliable.prototype._intervalSend = function(msg) {
   if (self._queue.length === 0) {
     clearTimeout(self._timeout);
     self._timeout = null;
-    //self._processAcks();
   }
 };
 
 // Go through ACKs to send missing pieces.
 Reliable.prototype._processAcks = function() {
+  util.log('processing acks');
   for (var id in this._outgoing) {
     if (this._outgoing.hasOwnProperty(id)) {
       this._sendWindowedChunks(id);
@@ -861,14 +857,6 @@ Reliable.prototype._handleMessage = function(msg) {
   var odata = this._outgoing[id];
   var data;
   switch (msg[0]) {
-    // No chunking was done.
-    case 'no':
-      var message = id;
-      if (!!message) {
-        this.onmessage(util.unpack(message));
-      }
-      break;
-    // Reached the end of the message.
     case 'end':
       data = idata;
 
@@ -887,12 +875,15 @@ Reliable.prototype._handleMessage = function(msg) {
         var ack = msg[2];
         // Take the larger ACK, for out of order messages.
         data.ack = Math.max(ack, data.ack);
+        util.log('got ack', id, data.ack);
 
         // Clean up when all chunks are ACKed.
         if (data.ack >= data.chunks.length) {
-          util.log('removing', id, 'Time:', new Date() - data.timer);
+          if (util.debug)
+            util.log('removing', id, 'Time:', new Date() - data.timer);
           delete this._outgoing[id];
-        } else {
+        } else if (ack in this._outgoing) {
+          //debugger
           this._processAcks();
         }
       }
@@ -1000,6 +991,7 @@ Reliable.prototype._sendWindowedChunks = function(id) {
 
 // Puts together a message from chunks.
 Reliable.prototype._complete = function(id) {
+  //if (typeof(id) === 'string') debugger
   util.log('Completed called for', id);
   var self = this;
   var chunks = this._incoming[id].chunks;

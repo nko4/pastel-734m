@@ -7,7 +7,7 @@ class S.Socket
     @conn = conn
     @callbacks = {}
     @conn.on 'data', (data) =>
-      @callbacks[data.key](data.data)
+      @callbacks[data.key]?(data.data)
 
   emit: (key, data) ->
     @conn.send key: key, data: data
@@ -19,7 +19,7 @@ class S.Socket
 
 S.pair = (room, cb) ->
   id = Math.ceil(Math.random() * 1000000).toString()
-  peer = new Peer id, host: location.hostname, port: 8001, debug: 2
+  peer = new Peer id, host: location.hostname, port: 8001, debug: 3
 
   $.getJSON "/pair/#{room}/#{id}", (data) ->
     console.log 'paired', data

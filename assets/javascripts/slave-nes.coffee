@@ -112,12 +112,14 @@ class S.SlaveNes extends S.BaseNes
 
     @socket.on "PPU:Frame", (data) =>
       if data.instruction >= @current_instruction
-        #console.log 'good', data.instruction #, data.frame_instructions
+        #console.log 'good'
         if @current_instruction is data["instruction"]
           @nes.ppu.startFrame()
           @renderFrame data["frame_instructions"]
           @nes.ppu.startVBlank()
         @current_instruction += 1
+      else
+        console.log '!!! bad !!!'
 
 
     # TODO: we should only preventDefault for non-controller keys. 

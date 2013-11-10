@@ -6,11 +6,11 @@ block script
       conn = socket.conn
       conn.on('data', function(data) { console.log(data) });
       if (master) {
-        for (var i = 0; i < 5; i++)
-          conn.send({ n: i, payload: Array(200) });
-        for (var i = 0; i < 5; i++)
-          conn.send({ n: i, payload: Array(2500) });
-        for (var i = 0; i < 5; i++)
-          conn.send({ n: i, payload: Array(300) });
+        for (var i = 0; i < 10; i++)
+          conn.send({ n: i, payload: Array(1) });
+        for (var i = 0; i < 2; i++)
+          conn.send({ n: i, payload: Array(25000) });
+        for (var i = 0; i < 10; i++)
+          conn.send({ n: i, payload: Array(2) });
       }
     });
