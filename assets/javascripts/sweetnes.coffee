@@ -60,7 +60,7 @@ class JSNESUI
 S.IndexController = ($scope) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
-  $scope.currentIndex = 1
+  $scope.currentIndex = 0
 
   pair = (room, cb) ->
     id = Math.ceil(Math.random() * 1000000).toString()
