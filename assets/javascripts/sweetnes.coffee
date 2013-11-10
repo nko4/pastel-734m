@@ -96,10 +96,7 @@ S.IndexController = ($scope) ->
         mousetrap.bind 'left',  -> $scope.$apply 'left()'
         mousetrap.bind 'right', -> $scope.$apply 'right()'
       when 'waiting'
-        mousetrap.bind 'esc', ->
-          $scope.$apply 'status = "select"'
-          $scope.peer.destroy()
-          $scope.pairRequest.abort()
+        mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
       when 'playing'
         S.talk(roomName())
         keyboard = $scope.nes.keyboard
@@ -117,6 +114,11 @@ S.IndexController = ($scope) ->
     $scope.direction = 'right'
     $scope.currentIndex = ($scope.currentIndex+1) % $scope.games.length
     setTimeout (-> $scope.$apply('direction=null')), 500
+
+  $scope.cancel = ->
+    $scope.status = 'select'
+    $scope.peer.destroy()
+    $scope.pairRequest.abort()
 
   $scope.play = ->
     $scope.status = 'waiting'
