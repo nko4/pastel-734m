@@ -131,19 +131,21 @@ S.IndexController = ($scope, $http) ->
   $scope.down = ->
     $scope.privateRoom = true
 
-  $scope.play = ->
+  $scope.play = (room) ->
     $scope.status = 'waiting'
 
     $scope.nes = nes = new JSNES swfPath: '/audio/', ui: JSNESUI
 
     getRoom = (cb) ->
-      if $scope.privateRoom
+      if room
+        cb room
+      else if $scope.privateRoom
         $http.get('/word').success cb
       else
         cb $scope.currentGame.url
 
     getRoom (room) ->
-      $scope.share = "#{location.href}play/#{room}"
+      $scope.share = "#{location.href.replace(location.pathname, '')}/play/#{room}"
       pair room, (socket, master) ->
         if master
           m = new S.MasterNes(nes, socket)
@@ -156,6 +158,10 @@ S.IndexController = ($scope, $http) ->
           new S.SlaveNes(nes, socket)
 
         $scope.$apply 'status = "playing"'
+
+  if room = location.pathname.match(/^\/play\/([^/]+)/)?[1]
+    $scope.privateRoom = true
+    $scope.play room
 
 class Socket
   constructor: (conn) ->

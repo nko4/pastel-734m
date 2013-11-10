@@ -53,6 +53,9 @@ app.get '/', (req, res) ->
   else
     res.render 'index'
 
+app.get '/play/:room', (req, res) ->
+  res.render 'index'
+
 app.get '/word', (req, res) ->
   word = words[Math.floor(Math.random() * words.length)].toLowerCase()
   res.send word
