@@ -837,7 +837,6 @@ Reliable.prototype._resend = function() {
     }
   }
 
-  console.log('WeStuck?, message: ' + this._ackedMessageId + ' packet: ' + this._ackedPacketId + ' resending')
   this._enqueueForDelivery(queue);
 
 }
@@ -1023,7 +1022,6 @@ Reliable.prototype._handleMessage = function(msg) {
         if (util.debug) {
           console.time('ReceivedMessage:' + packetId);
         }
-        console.log('received ' + packetId + ' need ' + (this._receivedPacketId + 1))
 
         this._collectDeliverableIds(messageId, function(deliveryId) {
           self._assembleAndNotify(deliveryId);
@@ -1107,7 +1105,6 @@ Reliable.prototype._collectDeliverableIds = function(receivedMessageId, delivere
     //TODO: Check the ordered preference from options
     deliverer(this._receivedMessageId + 1);
     this._receivedMessageId += 1;
-    console.log("Processing message " + (this._receivedMessageId) + ' need packet ' + (this._receivedPacketId + 1))
   }
 }
 
