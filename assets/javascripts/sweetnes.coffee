@@ -86,6 +86,11 @@ S.IndexController = ($scope) ->
   roomName = () ->
     $scope.currentGame.urlSafeName()
 
+  filterNESKeypresses = (e, fn) ->
+    switch e.keyCode
+      when 88, 89, 90, 17, 13, 38, 40, 37, 39, 103, 105, 99, 97, 104, 98, 100, 102
+        fn.bind($scope.nes.keyboard)(e)
+
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
 
@@ -106,9 +111,9 @@ S.IndexController = ($scope) ->
         S.talk(roomName())
         keyboard = $scope.nes.keyboard
         $(document)
-          .bind('keyup',    (e) -> keyboard.keyUp(e))
-          .bind('keydown',  (e) -> keyboard.keyDown(e))
-          .bind('keypress', (e) -> keyboard.keyPress(e))
+          .bind('keyup',    (e) -> filterNESKeypresses(e, keyboard.keyUp))
+          .bind('keydown',  (e) -> filterNESKeypresses(e, keyboard.keyDown))
+          .bind('keypress', (e) -> filterNESKeypresses(e, keyboard.keyPress))
 
   $scope.left = ->
     $scope.direction = 'left'
