@@ -1,0 +1,18 @@
+html( ng-app='foo' )
+  div( ng-controller='F.IndexController' )
+    a( href='{{game}}' ) {{game}}
+    a( href='else' ) else
+    .ng-view
+
+  script( src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.1.5/angular.min.js" )
+  :coffee
+    window.F = angular.module('foo', [])
+      .config ($routeProvider, $locationProvider) ->
+        $routeProvider.when '/:game',
+          controller: 'F.IndexController'
+          template: ' '
+        $locationProvider.html5Mode true
+
+    F.IndexController = ($scope, $routeParams) ->
+      $scope.game = 'something'
+      console.log $routeParams

@@ -2,7 +2,7 @@ extends layout
 
 block content
 
-  .ng-cloak( ng-controller='S.IndexController' ng-class="status" )
+  .ng-cloak( ng-controller='S.IndexController' ng-class='status' )
 
     //- WebRTC Audio related elements
     #audio
@@ -15,7 +15,7 @@ block content
 
     .media
       #trailers
-        video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='{ current: currentGame == game}')
+        video.trailer( ng-repeat='game in games', autoplay='true', loop='true', ng-src='{{game.video}}', ng-class='{ current: currentGame == game}')
 
       canvas#emulator( width=256 height=240 )
 
@@ -31,3 +31,9 @@ block content
         svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
              viewBox="0 0 64 64", ng-click='right()', class='arrow shift {{direction == "right" && "right"}}' )
           g: path(fill="none",stroke-width="5",stroke="#fff",d="M15.407061999999996,9.792208C15.407061999999996,9.792208,48.592939,31.887987,48.592939,31.887987C48.592939,31.887987,15.407061999999996,54.025974,15.407061999999996,54.025974")
+
+block script
+  script
+    (function() {
+      S.params = { room: '#{room}', game: '#{game}' };
+    })();

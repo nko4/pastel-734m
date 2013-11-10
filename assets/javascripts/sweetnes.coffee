@@ -1,23 +1,30 @@
 #= require vendor/jsnes.min
 #= require vendor/peer
 
-window.S = angular.module 'sweetnes', []
+window.S = angular.module('sweetnes', [])
+  .config ($locationProvider) -> $locationProvider.html5Mode true
+
+userAgentString = navigator.userAgent
+S.browser =
+  if userAgentString.indexOf("Firefox")> 0
+    "firefox"
+  else if userAgentString.indexOf("Chrome/30") > 0
+    "chrome"
+  else if userAgentString.indexOf("Chrome/31") > 0
+    "chrome_beta"
+  else
+    "unknown"
 
 class Game
-  constructor: (name) ->
-    @name = name
-    @rom = name # lowercase, replace space with underscore, append .rom
-    @url = @videoSrc()
-    @romUrl = "/roms/#{@urlSafeName()}.nes"
+  constructor: (@name) ->
+    format = if S.browser is 'firefox' then ".ogg" else ".mp4"
+
+    @url = "/play/#{@urlSafeName()}-#{S.browser}"
+    @video = "/videos/#{@urlSafeName()}#{format}"
+    @rom = "/roms/#{@urlSafeName()}.nes"
 
   urlSafeName: ->
     @name.replace(/\./g, '').replace(/\s/g, '_').toLowerCase()
-
-  videoSrc: ->
-    UA = navigator.userAgent
-    isFirefox = UA.indexOf("Firefox") > -1
-    format = if isFirefox then ".ogg" else ".mp4"
-    "/videos/#{@urlSafeName()}#{format}"
 
 class JSNESUI
   constructor: (nes) ->
@@ -43,45 +50,34 @@ class JSNESUI
 
     @canvasContext.putImageData @canvasImageData, 0, 0
 
-  writeAudio: ->
-
-  enable: ->
+  writeAudio: -> # no-op
+  enable:     -> # no-op
+  updateStatus: (message) -> console.log 'nes:', message
 
   updateStatus: (message) ->
     # console.log 'nes:', message
 
-S.IndexController = ($scope) ->
+S.IndexController = ($scope, $http, $location, $browser) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
-  $scope.currentIndex = 1
-  $scope.userAgent
+  $scope.currentIndex = 0
+  debugger
 
   pair = (room, cb) ->
     id = Math.ceil(Math.random() * 1000000).toString()
     $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    userAgentString = navigator.userAgent
-
-    if userAgentString.indexOf("Firefox")> 0
-      browser = "Firefox"
-    else if userAgentString.indexOf("Chrome/30") > 0
-      browser = "Chrome"
-    else if userAgentString.indexOf("Chrome/31") > 0
-      browser = "Chrome-Beta"
-    else
-      browser = "unknown"
-
-    userAgentRoom = "#{browser}-#{room}"
-
-    $scope.pairRequest = $.getJSON "/pair/#{userAgentRoom}/#{id}", (data) ->
-      if data.master
-        S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
-        S.conn.on 'open', ->
-          cb new Socket(S.conn), data.master if cb
-      else
-        $scope.peer.on 'connection', (conn) ->
-          S.conn = conn
-          cb new Socket(S.conn), data.master if cb
+    $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
+      $scope.apply ->
+        if data.master
+          S.conn = $scope.peer.connect data.id,
+            reliable: true, serialization: 'json'
+          S.conn.on 'open', ->
+            cb new Socket(S.conn), data.master if cb
+        else
+          $scope.peer.on 'connection', (conn) ->
+            S.conn = conn
+            cb new Socket(S.conn), data.master if cb
 
   roomName = () ->
     $scope.currentGame.urlSafeName()
@@ -93,6 +89,7 @@ S.IndexController = ($scope) ->
 
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
+    $location.path $scope.currentGame.url
 
   $scope.$watch 'status', (status) ->
     mousetrap.reset()
@@ -103,10 +100,7 @@ S.IndexController = ($scope) ->
         mousetrap.bind 'left',  -> $scope.$apply 'left()'
         mousetrap.bind 'right', -> $scope.$apply 'right()'
       when 'waiting'
-        mousetrap.bind 'esc', ->
-          $scope.$apply 'status = "select"'
-          $scope.peer.destroy()
-          $scope.pairRequest.abort()
+        mousetrap.bind 'esc',   -> $scope.$apply 'cancel()'
       when 'playing'
         S.talk(roomName())
         keyboard = $scope.nes.keyboard
@@ -125,25 +119,48 @@ S.IndexController = ($scope) ->
     $scope.currentIndex = ($scope.currentIndex+1) % $scope.games.length
     setTimeout (-> $scope.$apply('direction=null')), 500
 
-  $scope.play = ->
+  $scope.cancel = ->
+    $scope.status = 'select'
+    $location.path '/'
+
+    $scope.peer.destroy()
+    $scope.pairRequest.abort()
+
+  $scope.play = (room = S.params.room) ->
     $scope.status = 'waiting'
+    $location.path $scope.currentGame.url
 
-    $scope.nes = nes = new JSNES
-      swfPath: '/audio/'
-      ui: JSNESUI
+    $scope.nes = nes = new JSNES swfPath: '/audio/', ui: JSNESUI
 
-    pair $scope.currentGame.urlSafeName(), (socket, master) ->
-      if master
-        m = new S.MasterNes(nes, socket)
-        m.loadRom $scope.currentGame.romUrl, ->
-          m.romInitialized()
-          m.selectedRom = $scope.currentGame.romUrl
-          m.partner "Rom:Changed", m.selectedRom
-          m.onRomLoaded m.selectedRom
-      else
-        new S.SlaveNes(nes, socket)
+    start = (room) ->
+      pair room, (socket, master) ->
+        if master
+          m = new S.MasterNes(nes, socket)
+          m.loadRom $scope.currentGame.rom, ->
+            m.romInitialized()
+            m.selectedRom = $scope.currentGame.rom
+            m.partner "Rom:Changed", m.selectedRom
+            m.onRomLoaded m.selectedRom
+        else
+          new S.SlaveNes(nes, socket)
 
-      $scope.$apply 'status = "playing"'
+        $scope.status = 'playing'
+
+    if room
+      start room
+    else
+      $http.get($scope.currentGame.url).success (room: room) ->
+        $location.path "#{$scope.currentGame.url}/#{room}"
+        start room
+
+  if S.params.game
+    [name, browser] = S.params.game.split('-')
+    for game, index in $scope.games
+      if game.urlSafeName() is name
+        $scope.currentIndex = index
+        $scope.currentGame = game
+        $scope.play()
+        break
 
 class Socket
   constructor: (conn) ->
@@ -158,20 +175,6 @@ class Socket
     @emit 'message', data
   on: (key, callback) ->
     @callbacks[key] = callback
-
-S.pair = (room, cb) ->
-  id = Math.ceil(Math.random() * 1000000).toString()
-  peer = new Peer id, host: location.hostname, port: 8001
-
-  $.getJSON "/pair/#{room}/#{id}", (data) ->
-    if data.master
-      S.conn = peer.connect data.id, reliable: true, serialization: 'json'
-      S.conn.on 'open', ->
-        cb new Socket(S.conn), data.master if cb
-    else
-      peer.on 'connection', (conn) ->
-        S.conn = conn
-        cb new Socket(S.conn), data.master if cb
 
 S.talk = (room, cb) ->
   id = Math.ceil(Math.random() * 1000000).toString()
