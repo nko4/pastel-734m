@@ -26,10 +26,10 @@ block script
       this.rom = name; // lowercase, replace space with underscore, append .rom
       
       var trailer = document.createElement("video");
-      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + ".mov");
+      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + ".mp4");
       trailer.setAttribute("class", "trailer");
-      trailer.setAttribute("autoplay");
-      trailer.setAttribute("loop");
+      trailer.setAttribute("autoplay", "true");
+      trailer.setAttribute("loop", "true");
       
       document.getElementById("trailers").appendChild(trailer);
 
@@ -42,7 +42,7 @@ block script
 
     sweetnes.Games = new Ring();
 
-    ["Bubble Bobble", "Tetris", "Super Mario Bros. 3", "Contra"].forEach(function(name) {
+    ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"].forEach(function(name) {
       sweetnes.Games.push(new sweetnes.Game(name));
     });
 
