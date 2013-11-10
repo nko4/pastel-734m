@@ -27,6 +27,8 @@ block content
         | with
         .option( ng-class='{ selected: !privateRoom }', ng-click='up()' ) anyone
         .option( ng-class='{ selected: privateRoom }', ng-click='down()' ) friend
+      #share( ng-show="status == 'waiting' && privateRoom && share" )
+        p Have your friend visit <a href="{{share}}">{{share}}</a>.
 
       #instructions
         p Press <span class="key">Z</span> for <span class="button">A</span>

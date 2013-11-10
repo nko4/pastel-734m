@@ -58,9 +58,7 @@ app.get '/test', (req, res) ->
 
 app.get '/word', (req, res) ->
   word = words[Math.floor(Math.random() * words.length)].toLowerCase()
-  res.format
-    'text/html':        -> res.send word
-    'application/json': -> res.json word
+  res.send word
 
 app.get '/pair/:room/:id', (req, res) ->
   id = req.param('id')

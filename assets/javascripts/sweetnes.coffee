@@ -57,7 +57,7 @@ class JSNESUI
   updateStatus: (message) ->
     # console.log 'nes:', message
 
-S.IndexController = ($scope) ->
+S.IndexController = ($scope, $http) ->
   $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Tetris 2", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = Math.floor(Math.random($scope.games.length) * 10 % $scope.games.length)
@@ -137,19 +137,26 @@ S.IndexController = ($scope) ->
       swfPath: '/audio/'
       ui: JSNESUI
 
-    room = if $scope.privateRoom then 'foobar' else $scope.currentGame.url
-    pair room, (socket, master) ->
-      if master
-        m = new S.MasterNes(nes, socket)
-        m.loadRom $scope.currentGame.rom, ->
-          m.romInitialized()
-          m.selectedRom = $scope.currentGame.rom
-          m.partner "Rom:Changed", m.selectedRom
-          m.onRomLoaded m.selectedRom
+    getRoom = (cb) ->
+      if $scope.privateRoom
+        $http.get('/word').success cb
       else
-        new S.SlaveNes(nes, socket)
+        cb $scope.currentGame.url
 
-      $scope.$apply 'status = "playing"'
+    getRoom (room) ->
+      $scope.share = "#{location.href}play/#{room}"
+      pair room, (socket, master) ->
+        if master
+          m = new S.MasterNes(nes, socket)
+          m.loadRom $scope.currentGame.rom, ->
+            m.romInitialized()
+            m.selectedRom = $scope.currentGame.rom
+            m.partner "Rom:Changed", m.selectedRom
+            m.onRomLoaded m.selectedRom
+        else
+          new S.SlaveNes(nes, socket)
+
+        $scope.$apply 'status = "playing"'
 
 class Socket
   constructor: (conn) ->

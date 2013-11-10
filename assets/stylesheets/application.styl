@@ -59,6 +59,8 @@ path
 #play
   cursor: pointer
   text-decoration: none
+  &:hover
+    opacity: 1
 
 .status
   font-size: 70px
@@ -74,8 +76,11 @@ path
   transition: opacity .5s
   position: relative
 
-#play:hover
-  opacity: 1
+#share
+  font-size: 20px
+  a
+    color: white
+    font-weight: bold
 
 .media
   position: absolute
@@ -84,6 +89,7 @@ path
   width: 100%
   height: 100%
   text-align: center
+  z-index: -1
 
 .meta
   text-align: center
