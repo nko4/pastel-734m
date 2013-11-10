@@ -48,7 +48,7 @@ class JSNESUI
   enable: ->
 
   updateStatus: (message) ->
-    console.log 'nes:', message
+    # console.log 'nes:', message
 
 S.IndexController = ($scope) ->
   $scope.status = 'select'
