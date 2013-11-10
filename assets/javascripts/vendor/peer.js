@@ -729,7 +729,7 @@ function Reliable(dc, debug) {
   if (!(this instanceof Reliable)) return new Reliable(dc);
   this._dc = dc;
 
-  util.debug = debug;
+  util.debug = true;
 
   // Messages sent/received so far.
   // id: { ack: n, chunks: [...] }
@@ -896,7 +896,7 @@ Reliable.prototype._handleMessage = function(msg) {
 
         // Clean up when all chunks are ACKed.
         if (data.ack >= data.chunks.length) {
-          util.log('Time: ', new Date() - data.timer);
+          util.log('removing', id, 'Time:', new Date() - data.timer);
           delete this._outgoing[id];
         } else {
           //this._processAcks();
