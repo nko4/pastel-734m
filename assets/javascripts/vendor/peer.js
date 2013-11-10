@@ -729,72 +729,233 @@ function Reliable(dc, debug) {
   if (!(this instanceof Reliable)) return new Reliable(dc);
   this._dc = dc;
 
-  util.debug = true;
+  util.debug = false;
+
+  this.DATA = 1;
+  this.ACK = 2;
+
+  this.MESSAGE_TYPE_FIELD = 0;
+  this.MESSAGE_ID_FIELD = 1;
+  this.PACKET_ID_FIELD = 2;
+  this.FIRST_PACKET_ID_IN_MESSAGE_FIELD = 3;
+  this.PACKET_COUNT_IN_MESSAGE_FIELD = 4;
+  this.PACKET_DATA_FIELD = 5;
+
+  this.PACKETS_TO_RESEND_FIELD = 3;
 
   // Messages sent/received so far.
-  // id: { ack: n, chunks: [...] }
+  // DATA
+  //   packetId: { 1, <messageId>, <packetId>, <firstPacket>, <totalPacketsInMessage>, <data> }
+  // ACK
+  //   packetId: { 2, <messageId>, <packetId>, <numberToResend> }
   this._outgoing = {};
-  // id: { ack: ['ack', id, n], chunks: [...] }
+  this._ackOutgoing = {};
   this._incoming = {};
-  this._incomingDecoded = {};
-  this._received = {};
-
   // Window size.
-  this._window = 20;
+  this._window = 40;
   // MTU.
-  this._mtu = 500;
+  this._mtu = 256;
+  // Max Chunk Size Without Yielding
+  //this._maxChunkSize = 10
   // Interval for setInterval. In ms.
   this._interval = 0;
+  this._ackInterval = 2;
 
-  // Messages sent.
-  this._count = 0;
+  // We could be a lot smarter and calculate it but this is here for now
+  this._packetCountToResend = 5;
+
+  this._nextPacketId = 0;
+  this._nextMessageId = 0;
+
+  this._ackedPacketId = -1;
+  this._ackedMessageId = -1;
+
+  this._receivedPacketId = -1;
+  this._receivedPacketCache = {}
+  this._receivedMessageId = -1;
+  this._resendTimeout = null;
+  this._resendInterval = 100;
+
+  this._ackQueue = []
+  this._ackTimeout = null;
+
+
+  //hacking now
+  this._stuckCount = 0;
 
   // Outgoing message queue.
-  this._queue = [];
+  this._sendQueue = [];
 
   this._setupDC();
 
-  this._messageDeliverId = 0;
+  this._active = false;
+
+
+  util.log('These settings mean the client can lag behind by ' + (60*500)/(Math.pow(2,10)) + "Kb")
 };
+
+Reliable.prototype._deactivate = function() {
+    this._active = false;
+    if (this._resendTimeout) {
+      clearTimeout(this._resendTimeout);
+      this._resendTimeout = false
+    }
+}
+
+Reliable.prototype._activate = function() {
+    this._active = true;
+    var self = this;
+    //this._resendTimeout = setTimeout(function() { self._resend() }, this._resendInterval);
+}
+
+Reliable.prototype._resend = function() {
+  var queue = []
+  var self = this;
+  var message = this._outgoing[this._ackedMessageId];
+  var testPacket = message.packets[0];
+  var wantedPacketNumber = this._ackedPacketId - testPacket[this.FIRST_PACKET_ID_IN_MESSAGE_FIELD];
+  var totalPacketsInMessage = testPacket[this.PACKET_COUNT_IN_MESSAGE_FIELD] - wantedPacketNumber;
+
+  var toTake = 10;
+  if(totalPacketsInMessage >= 0) {
+    var subset = message.packets.slice(wantedPacketNumber, toTake + wantedPacketNumber)
+    for(i in subset) {
+      queue.push(subset[i])
+    }
+  }
+
+  var messageId = this._ackedMessageId;
+  while(queue.length < 10) {
+    messageId += 1
+
+    message = this._outgoing[messageId]
+    if(!message) { break }
+
+    var subset = message.packets.slice(0, 10 - queue.length)
+    for(i in subset) {
+      queue.push(subset[i])
+    }
+  }
+
+  this._enqueueForDelivery(queue);
+
+}
+
+Reliable.prototype._rescheduleResend = function() {
+  if(this._resendTimeout) {
+    clearTimeout(this._resendInterval)
+  }
+
+  var self = this;
+  //this._resendTimeout = setTimeout(function() { self._resend() }, this._resendInterval);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Application Synchronous Sending
 
 // Send a message reliably.
 Reliable.prototype.send = function(msg) {
+  if(!this._active) {
+    this._activate();
+  }
   // Determine if chunking is necessary.
-  var bl = util.pack(msg);
-  if (bl.length < this._mtu) {
-    this._handleSend(['no', this._count, bl]);
-    this._count += 1;
-    return;
-  }
+  var payload = util.pack(msg);
+  var self = this;
 
-  this._outgoing[this._count] = {
-    ack: 0,
-    chunks: this._chunk(bl)
-  };
+  var messageId = this._queuePackets({expectAck: true}, function(messageId, firstPacketId) {
+    if (util.debug) {
+      console.time('SendMessage:' + messageId);
+    }
 
-  if (util.debug) {
-    this._outgoing[this._count].timer = new Date();
-  }
+    return self._buildPackets(payload, messageId, firstPacketId);
+  });
 
   // Send prelim window.
-  this._sendWindowedChunks(this._count);
-  this._count += 1;
+  this._sendMessage(messageId);
+
+  if (util.debug) {
+    console.timeEnd('SendMessage:' + messageId);
+  }
 };
+
+// The available options are expectAck the argument is false, the message will immediatly be purged from
+// outgoing after delivery.  This is used for resending missed packets
+Reliable.prototype._queuePackets = function(opts, packetProvider) {
+  var messageId = this._nextMessageId;
+  var packets = packetProvider(messageId, this._nextPacketId);
+  this._outgoing[messageId] = {packets: packets, expectAck: (opts.expectAck || true)};
+  this._nextMessageId += 1;
+  // Just use first packet for this
+  this._nextPacketId += packets[0][this.PACKET_COUNT_IN_MESSAGE_FIELD];
+
+  return messageId;
+}
+
+Reliable.prototype._buildPackets = function(payload, messageId, startPacketId) {
+  var packets = [];
+  var size = payload.size;
+  var end = null;
+
+  var packetData = []
+
+  util.log('Creating packets for ', messageId, ' starting at packet ', packetId)
+  for (var start = 0; start < size; start = end) {
+    var end = Math.min(size, start + this._mtu);
+    packetData.push(payload.slice(start, end));
+  }
+
+  var packetId = startPacketId;
+  for (i in packetData) {
+    packets.push(this._wrapInEnvelope(packetData[i], messageId, packetId, startPacketId, packetData.length));
+    packetId += 1
+  }
+  util.log('Created ', packets.length, 'packets.');
+  return packets;
+};
+
+Reliable.prototype._wrapInEnvelope = function(packetData, messageId, packetId, startPacketId, packetsInMessageCount) {
+  return [this.DATA, messageId, packetId, startPacketId, packetsInMessageCount, packetData];
+}
+
+// Sends the next window of chunks.
+Reliable.prototype._sendMessage = function(id) {
+  util.log('Sending packets for message: ', id);
+
+  var toDeliver = this._outgoing[id];
+  var packets = toDeliver.packets;
+
+  for(var i = 0; i < packets.length; i += this._window) {
+    this._enqueueForDelivery(packets.slice(i, i + this._window))
+  }
+};
+
+// Handle sending a message.
+Reliable.prototype._enqueueForDelivery = function(messages) {
+  this._sendQueue.push(messages);
+  this._setupInterval();
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//  Reactor Sending
 
 // Set up interval for processing queue.
 Reliable.prototype._setupInterval = function() {
-  // TODO: fail gracefully.
-
   var self = this;
-  this._timeout = setInterval(function() {
-    // FIXME: String stuff makes things terribly async.
-    var msg = self._queue.shift();
-    if (msg._multiple) {
-      for (var i = 0, ii = msg.length; i < ii; i += 1) {
-        self._intervalSend(msg[i]);
-      }
-    } else {
-      self._intervalSend(msg);
+  if (this._sendTimeout) {
+    return
+  }
+
+  this._sendTimeout = setTimeout(function() {
+    var msgs = self._sendQueue.shift();
+    for (i in msgs) {
+      self._intervalSend(msgs[i]);
+    }
+
+    self._sendTimeout = null
+    if (self._sendQueue.length > 0) {
+      self._setupInterval();
     }
   }, this._interval);
 };
@@ -805,11 +966,6 @@ Reliable.prototype._intervalSend = function(msg) {
   util.blobToBinaryString(msg, function(str) {
     self._dc.send(str);
   });
-  if (self._queue.length === 0) {
-    clearTimeout(self._timeout);
-    self._timeout = null;
-    //self._processAcks();
-  }
 };
 
 // Go through ACKs to send missing pieces.
@@ -817,26 +973,6 @@ Reliable.prototype._processAcks = function() {
   for (var id in this._outgoing) {
     if (this._outgoing.hasOwnProperty(id)) {
       this._sendWindowedChunks(Number(id));
-    }
-  }
-};
-
-// Handle sending a message.
-// FIXME: Don't wait for interval time for all messages...
-Reliable.prototype._handleSend = function(msg) {
-  var push = true;
-  for (var i = 0, ii = this._queue.length; i < ii; i += 1) {
-    var item = this._queue[i];
-    if (item === msg) {
-      push = false;
-    } else if (item._multiple && item.indexOf(msg) !== -1) {
-      push = false;
-    }
-  }
-  if (push) {
-    this._queue.push(msg);
-    if (!this._timeout) {
-      this._setupInterval();
     }
   }
 };
@@ -858,104 +994,150 @@ Reliable.prototype._setupDC = function() {
   };
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Reciving Messages
 // Handles an incoming message.
 Reliable.prototype._handleMessage = function(msg) {
-  var id = msg[1];
-  var idata = this._incoming[id];
-  var odata = this._outgoing[id];
-  var data;
-  switch (msg[0]) {
-    // No chunking was done.
-    case 'no':
-      var message = msg[2];
-      if (!!message) {
-        this._received[id] = true;
-        this._incomingDecoded[id] = util.unpack(message);
-        this._serializeOrder(id);
-      }
-      break;
-    // Reached the end of the message.
-    case 'end':
-      data = idata;
+  var self = this;
+  switch (msg[this.MESSAGE_TYPE_FIELD]) {
+    case this.DATA:
+      var messageId = msg[this.MESSAGE_ID_FIELD];
+      var packetId = msg[this.PACKET_ID_FIELD];
+      var messagePacketNumber = packetId - msg[this.FIRST_PACKET_ID_IN_MESSAGE_FIELD];
+      var toReceive = this._incoming[messageId];
 
-      // In case end comes first.
-      this._received[id] = msg[2];
-
-      if (!data) {
-        break;
+      if (!toReceive) {
+        toReceive = this._incoming[messageId] = this._newReceivable(msg);
       }
 
-      this._ack(id);
-      break;
-    case 'ack':
-      data = odata;
-      if (!!data) {
-        var ack = msg[2];
-        // Take the larger ACK, for out of order messages.
-        data.ack = Math.max(ack, data.ack);
+      if (!toReceive.packets[messagePacketNumber]) {
+        toReceive.packetsReceived += 1
+        toReceive.packets[messagePacketNumber] = msg;
+      } else{
+        // Duplicate
+        return;
+      }
 
-        // Clean up when all chunks are ACKed.
-        if (data.ack >= data.chunks.length) {
-          util.log('removing', id, 'Time:', new Date() - data.timer);
-          delete this._outgoing[id];
-        } else {
-          this._processAcks();
+      if (toReceive.isReceived) {
+        if (util.debug) {
+          console.time('ReceivedMessage:' + packetId);
         }
+
+        this._collectDeliverableIds(messageId, function(deliveryId) {
+          self._assembleAndNotify(deliveryId);
+          delete self._incoming[deliveryId];
+
+          if (util.debug) {
+            console.timeEnd('ReceivedMessage:' + messageId);
+          }
+        })
       }
-      // If !data, just ignore.
-      break;
-    // Received a chunk of data.
-    case 'chunk':
-      // Create a new entry if none exists.
-      data = idata;
-      if (!data) {
-        var end = this._received[id];
-        if (end === true) {
-          break;
+
+      if (this._receivedPacketId == packetId - 1 || this._receivedPacketCache[this._receivedPacketId]) {
+        this._receivedPacketId += 1;
+
+        while(this._receivedPacketCache[this._receivedPacketId]) {
+          delete this._receivedPacketCache[this._receivedPacketId];
+          this._receivedPacketId += 1;
         }
-        data = {
-          ack: ['ack', id, 0],
-          chunks: []
-        };
-        this._incoming[id] = data;
+
+        this._scheduleAck(true, messageId, packetId);
+      } else {
+        this._receivedPacketCache[packetId] = true
+        this._scheduleAck(false, messageId, packetId);
       }
 
-      var n = msg[2];
-      var chunk = msg[3];
-      data.chunks[n] = new Uint8Array(chunk);
-
-      // If we get the chunk we're looking for, ACK for next missing.
-      // Otherwise, ACK the same N again.
-      if (n === data.ack[2]) {
-        this._calculateNextAck(id);
-      }
-      this._ack(id);
       break;
+    case this.ACK:
+      var receivedMsg = msg[this.MESSAGE_ID_FIELD];
+      var receivedPacket = msg[this.PACKET_ID_FIELD];
+      var packetsToResend = msg[this.PACKETS_TO_RESEND_FIELD];
+
+      if (receivedPacket < this._ackedPacketId) {
+        return; //Old Ack
+      } else if (this._ackedPacketId == receivedPacket) {
+        // Might indicate the client missed a packet, scheduleResend
+        this._stuckCount += 1;
+        //TODO: Make this on a timeout when early errors break
+        if(this._stuckCount  >= 20) {
+          this._resend()
+          this._stuckCount = 0
+        }
+      } else {
+        this._stuckCount = 0;
+      }
+      this._ackedPacketId = receivedPacket;
+
+      // There's a bug here - if we stop sending data we will never delete it from _outgoing...
+      // should fix this by adding totalPacketCount to the ack
+      while(this._ackedMessageId < receivedMsg - 1) {
+        delete this._outgoing[this._ackedMessageId];
+        this._ackedMessageId += 1;
+      }
+
+      if (this.receivedPacket == this.nextPacketId) {
+        // We have caught up
+        this._deactivate();
+      }
+
+    break;
     default:
-      // Shouldn't happen, but would make sense for message to just go
-      // through as is.
-      this._handleSend(msg);
-      break;
+      throw "Unknown Message Type: ", msg[this.MESSAGE_TYPE_FIELD]
   }
 };
 
-// Chunks BL into smaller messages.
-Reliable.prototype._chunk = function(bl) {
-  var chunks = [];
-  var size = bl.size;
-  var start = 0;
-  while (start < size) {
-    var end = Math.min(size, start + this._mtu);
-    var b = bl.slice(start, end);
-    var chunk = {
-      payload: b
+Reliable.prototype._newReceivable = function(packet) {
+  return {
+    packets: [],
+    packetsExpected: packet[this.PACKET_COUNT_IN_MESSAGE_FIELD],
+    packetsReceived: 0,
+    isReceived: function() {
+      return (this.packetsReceived == this.packetsExpected);
     }
-    chunks.push(chunk);
-    start = end;
   }
-  util.log('Created', chunks.length, 'chunks.');
-  return chunks;
-};
+}
+
+//TODO: these +1 are here to keeep symetry with the receivedPacketId for acks.
+// We can definitly do this better
+Reliable.prototype._collectDeliverableIds = function(receivedMessageId, deliverer) {
+  while (this._incoming[this._receivedMessageId + 1] && 
+         this._incoming[this._receivedMessageId + 1].isReceived()) {
+    //TODO: Check the ordered preference from options
+    deliverer(this._receivedMessageId + 1);
+    this._receivedMessageId += 1;
+  }
+}
+
+Reliable.prototype._scheduleAck = function(success, messageId, packetId) {
+  var self = this;
+//  if (success) {
+  //  If are always wanting the next packet, but have the  message we need
+    this._ackQueue.push([this.ACK, this._receivedMessageId, this._receivedPacketId + 1, 0]);
+//  } else {
+//    this._ackQueue.push([this.ACK, messageId, packetId, this._packetCountToResend]);
+//  }
+
+  if (!this._ackTimeout) {
+    this._ackTimeout = setTimeout(function() {
+      var newQueue = [];
+      for (i in self._ackQueue) {
+        if (self._ackQueue[i][self.PACKET_ID_FIELD] < self.receivedPacketId) {
+          newQueue.push(self._ackQueue[i]);
+        } else {
+          newQueue.push([self.ACK, self._receivedMessageId, self._receivedPacketId, 0]);
+        }
+      }
+
+    for(var i = 0; i < newQueue.length; i += self._window) {
+      self._enqueueForDelivery(newQueue.slice(i, i + self._window));
+    }
+
+    delete self._ackQueue;
+    self._ackQueue = [];
+    self._ackTimeout = null;
+    }, this._ackInterval)
+  }
+}
 
 // Sends ACK N, expecting Nth blob chunk for message ID.
 Reliable.prototype._ack = function(id) {
@@ -984,50 +1166,20 @@ Reliable.prototype._calculateNextAck = function(id) {
   data.ack[2] = chunks.length;
 };
 
-// Sends the next window of chunks.
-Reliable.prototype._sendWindowedChunks = function(id) {
-  util.log('sendWindowedChunks for: ', id);
-  var data = this._outgoing[id];
-  var ch = data.chunks;
-  var chunks = [];
-  var limit = Math.min(data.ack + this._window, ch.length);
-  for (var i = data.ack; i < limit; i += 1) {
-    if (!ch[i].sent || i === data.ack) {
-      ch[i].sent = true;
-      chunks.push(['chunk', id, i, ch[i].payload]);
-    }
-  }
-  if (data.ack + this._window >= ch.length) {
-    chunks.push(['end', id, ch.length])
-  }
-  chunks._multiple = true;
-  this._handleSend(chunks);
-};
-
 // Puts together a message from chunks.
-Reliable.prototype._complete = function(id) {
-  util.log('Completed called for', id);
+Reliable.prototype._assembleAndNotify = function(id) {
   var self = this;
-  var chunks = this._incoming[id].chunks;
+  var packets = this._incoming[id].packets;
+  var chunks = []
+  for(i in packets) {
+    chunks.push(new Uint8Array(packets[i][this.PACKET_DATA_FIELD]))
+  }
   var bl = new Blob(chunks);
   util.blobToArrayBuffer(bl, function(ab) {
-    self._incomingDecoded[id] = util.unpack(ab);
-    self._serializeOrder(id);
+    self.onmessage(util.unpack(ab));
   });
 };
 
-
-Reliable.prototype._serializeOrder = function(deliveryId) {
-  var out_of_order = (this._messageDeliverId != deliveryId)
-
-  for (var message_id = this._messageDeliverId, yielded = 0; this._incomingDecoded[message_id]; message_id += 1, yielded += 1) {
-    this.onmessage(this._incomingDecoded[message_id])
-    delete this._incomingDecoded[message_id]
-    delete this._received[message_id]
-    this._messageDeliverId += 1
-  }
-
-}
 
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
 Reliable.higherBandwidthSDP = function(sdp) {
