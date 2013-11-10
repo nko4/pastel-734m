@@ -51,6 +51,7 @@ class JSNESUI
     console.log 'nes:', message
 
 S.IndexController = ($scope) ->
+  $scope.status = 'select'
   $scope.games = (new Game(name) for name in ["Bubble Bobble", "Dr. Mario", "Super Mario Bros. 3", "Contra"])
   $scope.currentIndex = 1
 
@@ -71,19 +72,22 @@ S.IndexController = ($scope) ->
   $scope.$watch 'currentIndex', ->
     $scope.currentGame = $scope.games[$scope.currentIndex]
 
-  $scope.$watch 'currentGame.active', (isPlaying) ->
+  $scope.$watch 'status', (status) ->
     mousetrap.reset()
     $(document).unbind()
-    unless isPlaying
-      mousetrap.bind 'enter', -> $scope.$apply('play()')
-      mousetrap.bind 'left',  -> $scope.$apply('left()')
-      mousetrap.bind 'right', -> $scope.$apply('right()')
-    else
-      keyboard = $scope.nes.keyboard
-      $(document)
-        .bind('keyup',    (e) -> keyboard.keyUp(e))
-        .bind('keydown',  (e) -> keyboard.keyDown(e))
-        .bind('keypress', (e) -> keyboard.keyPress(e))
+    switch status
+      when 'select'
+        mousetrap.bind 'enter', -> $scope.$apply 'play()'
+        mousetrap.bind 'left',  -> $scope.$apply 'left()'
+        mousetrap.bind 'right', -> $scope.$apply 'right()'
+      when 'waiting'
+        mousetrap.bind 'esc', -> $scope.$apply 'status = "select"'
+      when 'playing'
+        keyboard = $scope.nes.keyboard
+        $(document)
+          .bind('keyup',    (e) -> keyboard.keyUp(e))
+          .bind('keydown',  (e) -> keyboard.keyDown(e))
+          .bind('keypress', (e) -> keyboard.keyPress(e))
 
   $scope.left = ->
     $scope.direction = 'left'
@@ -96,7 +100,7 @@ S.IndexController = ($scope) ->
     setTimeout (-> $scope.$apply('direction=null')), 500
 
   $scope.play = ->
-    $scope.currentGame.waiting = true
+    $scope.status = 'waiting'
 
     $scope.nes = nes = new JSNES
       swfPath: '/audio/'
@@ -113,7 +117,7 @@ S.IndexController = ($scope) ->
       else
         new S.SlaveNes(nes, socket)
 
-      $scope.$apply 'currentGame.active = true'
+      $scope.$apply 'status = "playing"'
 
     ###
     $http.get("/roms/#{$scope.currentGame.urlSafeName()}.nes", responseType: 'text/plain; charset=x-user-defined')

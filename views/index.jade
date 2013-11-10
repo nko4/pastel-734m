@@ -2,7 +2,7 @@ extends layout
 
 block content
 
-  .ng-cloak( ng-controller='S.IndexController' ng-class='{ isPlaying: currentGame.active }')
+  .ng-cloak( ng-controller='S.IndexController' ng-class="status" )
     .media
       #trailers
         video.trailer( ng-repeat='game in games', autoplay='true', loop='true', src='{{game.url}}', ng-class='{ current: currentGame == game}')
@@ -10,9 +10,10 @@ block content
       canvas#emulator( width=256 height=240 )
 
     .meta
-      a#play PLAY
+      a#play.status( ng-show="status == 'select'" ) PLAY
+      #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR PLAYER 2
 
-      #current
+      #current( ng-show="status == 'select'" )
         svg( height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
              viewBox="0 0 64 64", ng-click='left()', class='arrow shift {{direction == "left" && "left"}}' )
           g: path(fill="none",stroke-width="5",stroke="#fff",d="M48.592939,9.792208C48.592939,9.792208,15.407061999999996,31.887987,15.407061999999996,31.887987C15.407061999999996,31.887987,48.592939,54.025974,48.592939,54.025974")
