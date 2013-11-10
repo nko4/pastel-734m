@@ -20,6 +20,7 @@ block content
       canvas#emulator( width=256 height=240 )
 
     .meta
+      div(style="text-align:center; position: relative; top: 140px", ng-show="status == 'select'") Press <b>ENTER</b> to
       a#play.status( ng-show="status == 'select'", ng-click='play()' ) PLAY
       #waiting.status( ng-show="status == 'waiting'" ) WAITING FOR {{ privateRoom ? 'A FRIEND' : 'PLAYER' }}
 
