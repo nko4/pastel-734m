@@ -134,9 +134,7 @@ S.IndexController = ($scope, $http) ->
   $scope.play = ->
     $scope.status = 'waiting'
 
-    $scope.nes = nes = new JSNES
-      swfPath: '/audio/'
-      ui: JSNESUI
+    $scope.nes = nes = new JSNES swfPath: '/audio/', ui: JSNESUI
 
     getRoom = (cb) ->
       if $scope.privateRoom
