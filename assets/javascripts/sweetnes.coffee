@@ -57,15 +57,15 @@ S.IndexController = ($scope) ->
 
   pair = (room, cb) ->
     id = Math.ceil(Math.random() * 1000000).toString()
-    peer = new Peer id, host: location.hostname, port: 8001
+    $scope.peer = new Peer id, host: location.hostname, port: 8001
 
-    $.getJSON "/pair/#{room}/#{id}", (data) ->
+    $scope.pairRequest = $.getJSON "/pair/#{room}/#{id}", (data) ->
       if data.master
-        S.conn = peer.connect data.id, reliable: true, serialization: 'json'
+        S.conn = $scope.peer.connect data.id, reliable: true, serialization: 'json'
         S.conn.on 'open', ->
           cb new Socket(S.conn), data.master if cb
       else
-        peer.on 'connection', (conn) ->
+        $scope.peer.on 'connection', (conn) ->
           S.conn = conn
           cb new Socket(S.conn), data.master if cb
 
@@ -81,7 +81,10 @@ S.IndexController = ($scope) ->
         mousetrap.bind 'left',  -> $scope.$apply 'left()'
         mousetrap.bind 'right', -> $scope.$apply 'right()'
       when 'waiting'
-        mousetrap.bind 'esc', -> $scope.$apply 'status = "select"'
+        mousetrap.bind 'esc', ->
+          $scope.$apply 'status = "select"'
+          $scope.peer.destroy()
+          $scope.pairRequest.abort()
       when 'playing'
         keyboard = $scope.nes.keyboard
         $(document)

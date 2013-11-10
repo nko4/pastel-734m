@@ -81,6 +81,7 @@ app.get '/pair/:room/:id', (req, res) ->
     delete waiting[room]
   else
     waiting[room] = { id: id, res: res }
+    res.on 'close', -> delete waiting[room]
 
 # View Helpers
 # ------------
