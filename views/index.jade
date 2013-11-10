@@ -2,7 +2,7 @@ extends layout
 
 block content
 
-  div#trailer
+  div#trailers
 
   a#play PLAY
 
@@ -24,7 +24,16 @@ block script
     sweetnes.Game = function(name) {
       this.name = name;
       this.rom = name; // lowercase, replace space with underscore, append .rom
-      this.trailer = name; // lowercase, replace space with underscore, append .mov
+      
+      var trailer = document.createElement("video");
+      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + ".mov");
+      trailer.setAttribute("class", "trailer");
+      trailer.setAttribute("autoplay");
+      trailer.setAttribute("loop");
+      
+      document.getElementById("trailers").appendChild(trailer);
+
+      this.trailer = trailer;
     }
 
     sweetnes.Game.prototype.urlSafeName = function() {
@@ -42,13 +51,23 @@ block script
       plate.innerHTML = sweetnes.Games.get().name;
     }
 
-    sweetnes.updateGameName();
-
     sweetnes.play = function() {
       window.location = "/play/" + sweetnes.Games.get().urlSafeName();
     }
 
     var playButton = document.getElementById("play");
+    
+    sweetnes.hideCurrentTrailer = function () {
+      var currentVideo = sweetnes.Games.get().trailer;
+
+      currentVideo.style.opacity = 0;
+    }
+
+    sweetnes.showCurrentTrailer = function () {
+      var currentVideo = sweetnes.Games.get().trailer;
+
+      currentVideo.style.opacity = 0.3;
+    }
 
     // Can just do this onLoad
     var arrows = document.getElementsByClassName("arrow");
@@ -61,7 +80,9 @@ block script
         arrow.setAttribute("class", "arrow shift left");
       }, 1);
 
+      sweetnes.hideCurrentTrailer();
       sweetnes.Games.prev();
+      sweetnes.showCurrentTrailer();
       sweetnes.updateGameName();
     }
 
@@ -73,16 +94,39 @@ block script
         arrow.setAttribute("class", "arrow shift right");
       }, 1);
 
+      sweetnes.hideCurrentTrailer();
       sweetnes.Games.next();
+      sweetnes.showCurrentTrailer();
       sweetnes.updateGameName();
+    }
+
+    var onceFlags = {};
+    var onceEvery = function(fn, delay) {
+      return function() {
+        if (onceFlags[fn]) {
+          // Do nothing
+        } else {
+          onceFlags[fn] = true;
+          fn();
+          setTimeout(function() {
+            delete onceFlags[fn];
+          }, delay);
+        }
+      }
     }
 
     // Could make these bindings implicit by setting some data attribute
     // on actual elements instead. Totally better.
     event.bind(playButton, "click", sweetnes.play);
-    event.bind(arrows[0], "click", sweetnes.prevGame);
-    event.bind(arrows[1], "click", sweetnes.nextGame);
+    event.bind(arrows[0], "click", onceEvery(sweetnes.prevGame, 500));
+    event.bind(arrows[1], "click", onceEvery(sweetnes.nextGame));
 
     mousetrap.bind("return", sweetnes.play);
-    mousetrap.bind("left", sweetnes.prevGame);
-    mousetrap.bind("right", sweetnes.nextGame);
+    mousetrap.bind("left", onceEvery(sweetnes.prevGame, 500));
+    mousetrap.bind("right", onceEvery(sweetnes.nextGame, 500));
+
+    // Initialize
+    sweetnes.showCurrentTrailer();
+    sweetnes.updateGameName();
+
+
