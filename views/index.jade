@@ -5,6 +5,7 @@ block content
   div#trailers
 
   a#play PLAY
+  div#redirect USE FIREFOX PLEASE
 
   div#current
     svg(height="64", version="1.1", width="64", xmlns="http://www.w3.org/2000/svg",
@@ -21,16 +22,30 @@ block script
   script
     window.sweetnes = window.sweetnes || {}
 
+    window.UA = navigator.userAgent;
+
+    var playButton = document.getElementById("play");
+    var redirect = document.getElementById("redirect");
+
+    window.isFirefox = window.UA.indexOf("Firefox") > -1;
+
+    if (!window.isFirefox) {
+      playButton.style.display = "none";
+      redirect.style.display = "block";
+    }
+
+    var trailerFormat = window.isFirefox? ".ogg" : ".mp4";
+
     sweetnes.Game = function(name) {
       this.name = name;
       this.rom = name; // lowercase, replace space with underscore, append .rom
-      
+
       var trailer = document.createElement("video");
-      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + ".mp4");
+      trailer.setAttribute("src", "/videos/" + this.urlSafeName() + trailerFormat);
       trailer.setAttribute("class", "trailer");
       trailer.setAttribute("autoplay", "true");
       trailer.setAttribute("loop", "true");
-      
+
       document.getElementById("trailers").appendChild(trailer);
 
       this.trailer = trailer;
@@ -55,8 +70,7 @@ block script
       window.location = "/play/" + sweetnes.Games.get().urlSafeName();
     }
 
-    var playButton = document.getElementById("play");
-    
+
     sweetnes.hideCurrentTrailer = function () {
       var currentVideo = sweetnes.Games.get().trailer;
 
@@ -121,7 +135,9 @@ block script
     event.bind(arrows[0], "click", onceEvery(sweetnes.prevGame, 500));
     event.bind(arrows[1], "click", onceEvery(sweetnes.nextGame));
 
-    mousetrap.bind("return", sweetnes.play);
+    if (window.isFirefox) {
+      mousetrap.bind("return", sweetnes.play);
+    }
     mousetrap.bind("left", onceEvery(sweetnes.prevGame, 500));
     mousetrap.bind("right", onceEvery(sweetnes.nextGame, 500));
 
