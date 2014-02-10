@@ -1,4 +1,4 @@
-/*! peerjs.js build:0.3.3, development. Copyright(c) 2013 Michelle Bu <michelle@michellebu.com> */
+/*! peerjs.js build:1.3.3, development. Copyright(c) 2013 Michelle Bu <michelle@michellebu.com> */
 (function(exports){
 var binaryFeatures = {};
 binaryFeatures.useBlobBuilder = (function(){
@@ -808,7 +808,7 @@ Reliable.prototype._activate = function() {
     //this._resendTimeout = setTimeout(function() { self._resend() }, this._resendInterval);
 }
 
-Reliable.prototype._resend = function() {
+Reliable.prototype._resendUnackedPackets = function() {
   var queue = []
   var self = this;
   var message = this._outgoing[this._ackedMessageId];
@@ -838,7 +838,6 @@ Reliable.prototype._resend = function() {
   }
 
   this._enqueueForDelivery(queue);
-
 }
 
 Reliable.prototype._rescheduleResend = function() {
@@ -862,7 +861,7 @@ Reliable.prototype.send = function(msg) {
   var payload = util.pack(msg);
   var self = this;
 
-  var messageId = this._queuePackets({expectAck: true}, function(messageId, firstPacketId) {
+  var envelope = this._envelopeForNewPackets(function(messageId, firstPacketId) {
     if (util.debug) {
       console.time('SendMessage:' + messageId);
     }
@@ -871,24 +870,81 @@ Reliable.prototype.send = function(msg) {
   });
 
   // Send prelim window.
-  this._sendMessage(messageId);
+  this._sendEnvelope(envelope);
 
   if (util.debug) {
-    console.timeEnd('SendMessage:' + messageId);
+    console.timeEnd('SendMessage:' + envelope.messageId());
   }
 };
 
+Envelope = function(packets_or_packet) {
+  //TODO: Dedup duplication
+  this.MESSAGE_TYPE_FIELD = 0;
+  this.MESSAGE_ID_FIELD = 1;
+  this.PACKET_ID_FIELD = 2;
+  this.FIRST_PACKET_ID_IN_MESSAGE_FIELD = 3;
+  this.PACKET_COUNT_IN_MESSAGE_FIELD = 4;
+  this.PACKET_DATA_FIELD = 5;
+
+  this.PACKETS_TO_RESEND_FIELD = 3;
+
+  if (packets instanceof Array) {
+    this._descriptor = packets_or_packet[0];
+    if (packets_or_packet.length == this.packetCount()) {
+      this._fullWrapper = true;
+      this._packets = packets_or_packet;
+    } else {
+      this._fullWrapper = false
+    }
+  } else {
+    this._descriptor = packets_or_packet;
+    this._fullWrapper = false;
+  }
+}
+
+Envelope.prototype = {
+  firstPacketId: function() {
+    return this._descriptor[this.FIRST_PACKET_ID_IN_MESSAGE_FIELD];
+  }
+
+  succeedingPacketId: function() {
+    return this.firstPacket() + this.packetCount();
+  }
+
+  succeedingMessageId: function() {
+    return this.messageId() + 1;
+  }
+
+  messageId: function() {
+    return this._descriptor[this.MESSAGE_ID_FIELD];
+  }
+
+  packetCount: function() {
+    return this._descriptor[this.PACKET_COUNT_IN_MESSAGE_FIELD];
+  }
+
+  each: function(callback) {
+    if (!this._fullWrapper) { throw "Can not iterate through an enevelope without all the packets" }
+
+    for(var i = 0, j = this.firstPacketId();
+        i < this.packetCount();
+        i+= 1, j += 1) {
+      callback(j, this._packets[i]);
+    }
+  }
+}
+
 // The available options are expectAck the argument is false, the message will immediatly be purged from
 // outgoing after delivery.  This is used for resending missed packets
-Reliable.prototype._queuePackets = function(opts, packetProvider) {
+Reliable.prototype._envelopeForNewPackets = function(buildPacketsCallback) {
+  var self = this;
   var messageId = this._nextMessageId;
-  var packets = packetProvider(messageId, this._nextPacketId);
-  this._outgoing[messageId] = {packets: packets, expectAck: (opts.expectAck || true)};
-  this._nextMessageId += 1;
-  // Just use first packet for this
-  this._nextPacketId += packets[0][this.PACKET_COUNT_IN_MESSAGE_FIELD];
+  var packets = buildPacketsCallback(messageId, this._nextPacketId);
+  var envelope = new Envelope(packets);
+  this._nextPacketId = envelope.succeedingPacketId();
+  this._nextMessageId = envelope.succedingMessageId();
 
-  return messageId;
+  return envelope;
 }
 
 Reliable.prototype._buildPackets = function(payload, messageId, startPacketId) {
@@ -907,7 +963,7 @@ Reliable.prototype._buildPackets = function(payload, messageId, startPacketId) {
   var packetId = startPacketId;
   for (i in packetData) {
     packets.push(this._wrapInEnvelope(packetData[i], messageId, packetId, startPacketId, packetData.length));
-    packetId += 1
+    packetId += 1;
   }
   util.log('Created ', packets.length, 'packets.');
   return packets;
@@ -918,24 +974,30 @@ Reliable.prototype._wrapInEnvelope = function(packetData, messageId, packetId, s
 }
 
 // Sends the next window of chunks.
-Reliable.prototype._sendMessage = function(id) {
-  util.log('Sending packets for message: ', id);
+Reliable.prototype._sendEnvelope = function(envelope) {
+  util.log('Sending packets for message: ', envelope.messageId());
 
-  var toDeliver = this._outgoing[id];
-  var packets = toDeliver.packets;
+  var self = this;
+  var toDeliver = [];
 
-  for(var i = 0; i < packets.length; i += this._window) {
-    this._enqueueForDelivery(packets.slice(i, i + this._window))
-  }
+  envelope.eachPacket(function(packetId, packet) {
+    self._outgoing[packetId] = packet;
+    toDeliver.push(packet);
+
+    if (toDeliver.length < this._window) {
+      this._equeueForDelivery(toDeliver);
+      toDeliver = [];
+    }
+  });
+
+  this._equeueForDelivery(toDeliver);
 };
 
 // Handle sending a message.
-Reliable.prototype._enqueueForDelivery = function(messages) {
-  this._sendQueue.push(messages);
+Reliable.prototype._enqueueForDelivery = function(packets) {
+  this._sendQueue.push(packets);
   this._setupInterval();
 };
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Reactor Sending
@@ -1025,7 +1087,6 @@ Reliable.prototype._handleMessage = function(msg) {
 
         this._collectDeliverableIds(messageId, function(deliveryId) {
           self._assembleAndNotify(deliveryId);
-          delete self._incoming[deliveryId];
 
           if (util.debug) {
             console.timeEnd('ReceivedMessage:' + messageId);
@@ -1033,51 +1094,32 @@ Reliable.prototype._handleMessage = function(msg) {
         })
       }
 
-      if (this._receivedPacketId == packetId - 1 || this._receivedPacketCache[this._receivedPacketId]) {
+      this._receivedPacketCache[packetId] = true
+
+      while(this._receivedPacketCache[this._receivedPacketId]) {
+        delete this._receivedPacketCache[this._receivedPacketId];
         this._receivedPacketId += 1;
+      }
 
-        while(this._receivedPacketCache[this._receivedPacketId]) {
-          delete this._receivedPacketCache[this._receivedPacketId];
-          this._receivedPacketId += 1;
-        }
-
+      if (this._receivedPacketId == packetId) {
+        // We are receiving contiguous packets
         this._scheduleAck(true, messageId, packetId);
       } else {
-        this._receivedPacketCache[packetId] = true
+        // We are receiving packets out of order - or not at all
         this._scheduleAck(false, messageId, packetId);
       }
 
       break;
     case this.ACK:
-      var receivedMsg = msg[this.MESSAGE_ID_FIELD];
-      var receivedPacket = msg[this.PACKET_ID_FIELD];
-      var packetsToResend = msg[this.PACKETS_TO_RESEND_FIELD];
+      var receivedPacketId = msg[this.PACKET_ID_FIELD];
 
-      if (receivedPacket < this._ackedPacketId) {
-        return; //Old Ack
-      } else if (this._ackedPacketId == receivedPacket) {
-        // Might indicate the client missed a packet, scheduleResend
-        this._stuckCount += 1;
-        //TODO: Make this on a timeout when early errors break
-        if(this._stuckCount  >= 20) {
-          this._resend()
-          this._stuckCount = 0
+      this._handleDuplicateAcks(receivedPacketId, function() {
+        this._trashAckedPackets(receivedPacketId);
+
+        if (receivedPacketId == this.nextPacketId - 1) {
+          // We have caught up
+          this._deactivate();
         }
-      } else {
-        this._stuckCount = 0;
-      }
-      this._ackedPacketId = receivedPacket;
-
-      // There's a bug here - if we stop sending data we will never delete it from _outgoing...
-      // should fix this by adding totalPacketCount to the ack
-      while(this._ackedMessageId < receivedMsg - 1) {
-        delete this._outgoing[this._ackedMessageId];
-        this._ackedMessageId += 1;
-      }
-
-      if (this.receivedPacket == this.nextPacketId) {
-        // We have caught up
-        this._deactivate();
       }
 
     break;
@@ -1097,13 +1139,35 @@ Reliable.prototype._newReceivable = function(packet) {
   }
 }
 
-//TODO: these +1 are here to keeep symetry with the receivedPacketId for acks.
-// We can definitly do this better
-Reliable.prototype._collectDeliverableIds = function(receivedMessageId, deliverer) {
+Reliable.prototype._handleDuplicateAcks(receivedPacketId, newAckCallback) {
+  if (receivedPacketId < this._ackedPacketId) {
+    //Old Ack
+  } else if (this._ackedPacketId == receivedPacketId) {
+    // Might indicate the client missed a packet, scheduleResend
+    // Other posibilitity is outof order packet delivery
+    this._resendUnackedPackets()
+  } else {
+    newAckCallback();
+  }
+}
+
+
+Reliable.prototype._trashAckedPackets = function(receivedPacketId) {
+  while(this._ackedPacketId <= receivedPacketId) {
+    delete this._outgoing[this._ackedPacketId];
+    this._ackedPacketId += 1;
+  }
+}
+
+//TODO: Support ordered vs unordered delivery from options
+Reliable.prototype._collectDeliverableIds = function(receivedMessageId, deliverMessage) {
+  // _receivedMessageId is the last message delivered to the user
+  // Here we check to see if we should deliver the next message
+  // because we only support ordered delivery, we ignore receivedMessageId
   while (this._incoming[this._receivedMessageId + 1] && 
          this._incoming[this._receivedMessageId + 1].isReceived()) {
     //TODO: Check the ordered preference from options
-    deliverer(this._receivedMessageId + 1);
+    deliverMessage(this._receivedMessageId + 1);
     this._receivedMessageId += 1;
   }
 }
@@ -1170,13 +1234,18 @@ Reliable.prototype._calculateNextAck = function(id) {
 Reliable.prototype._assembleAndNotify = function(id) {
   var self = this;
   var packets = this._incoming[id].packets;
-  var chunks = []
+  var assembled = []
+
+  delete self._incoming[deliveryId];
+
   for(i in packets) {
-    chunks.push(new Uint8Array(packets[i][this.PACKET_DATA_FIELD]))
+    assembled.push(new Uint8Array(packets[i][this.PACKET_DATA_FIELD]))
   }
-  var bl = new Blob(chunks);
-  util.blobToArrayBuffer(bl, function(ab) {
-    self.onmessage(util.unpack(ab));
+
+  var assembled = new Blob(chunks);
+
+  util.blobToArrayBuffer(blob, function(arrayBuffer) {
+    self.onmessage(util.unpack(arrayBuffer));
   });
 };
 
